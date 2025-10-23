@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "tests": "Tests",
+    "certificates": "My Certificates",
+    "achievements": "Achievements",
+    "partners": "Partnership",
+    "profile": "Profile",
+    "contact": "Contact Us"
+  },
+
+  "welcome_title": "CertifyMe — your platform for knowledge verification",
+  "welcome_subtitle": "Pass online tests, confirm your knowledge, and get an official PDF certificate with a QR code after payment. Fast, secure and simple.",
+  "btn_view_courses": "Take a Test",
+  "btn_create_course": "Create Test",
+  "contact_title": "Contact us",
+  "contact_description": "Fill out the form below — we’ll get in touch with you within 24 hours 💬",
+  "form_name": "Name",
+  "form_email": "Email address",
+  "form_phone": "Phone",
+  "form_telegram": "Telegram nickname (optional)",
+  "form_agree": "I agree with",
+  "form_terms": "the Terms of Use and personal data policy",
+  "form_submit": "Submit",
+  "placeholder_name": "Your name",
+  "placeholder_email": "Email address",
+  "error_invalid_phone": "Invalid phone number",
+  "form_check_error": "⚠️ Please check the form for errors",
+  "form_success": "✅ Thank you! We’ll contact you within 24 hours.",
+  "top_label": "Get your certificate after the test",
+  "discover_potential": "Earn official certificates with CertifyMe",
+  "platform_description": "A platform that automates knowledge verification, payments, and certificate generation with a QR code. Validation in one click.",
+
+  "edit_profile": "Edit Profile",
+  "save_changes": "Save Changes",
+  "change_password": "Change Password",
+  "old_password": "Old Password",
+  "new_password": "New Password",
+  "confirm_password": "Confirm New Password",
+  "confirm": "Confirm",
+  "logout": "Log Out",
+  "member_since": "Member since:",
+
+  "profile_updated": "✅ Profile updated successfully",
+  "password_changed": "✅ Password updated successfully",
+  "passwords_not_match": "❌ New password and confirmation do not match",
+  "update_error": "Error while updating",
+  "server_error": "Server error",
+  "tests_title": "Knowledge Check Tests",
+  "start_test": "Start Test",
+
+  "cards": {
+    "catalog": {
+      "label": "Tests",
+      "title": "Test Catalog",
+      "description": "Choose a test by topic — IT, design, marketing and more"
+    },
+    "create": {
+      "label": "For Instructors",
+      "title": "Create a Test",
+      "description": "Upload your own test and generate certificates for your students"
+    },
+    "profile": {
+      "label": "Profile",
+      "title": "My Certificates",
+      "description": "View and download all your earned certificates in one place"
+    },
+    "reviews": {
+      "label": "Results",
+      "title": "Test Results",
+      "description": "Check your previous attempts and track progress"
+    },
+    "career": {
+      "label": "Verification",
+      "title": "Certificate Verification",
+      "description": "Verify the authenticity of any certificate via QR code"
+    },
+    "support": {
+      "label": "Support",
+      "title": "24/7 Helpdesk",
+      "description": "Need help? Our team is always ready to assist you"
+    }
+  }
+}
