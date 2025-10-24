@@ -7,9 +7,18 @@ export default function ProfilePage() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
-    const [user, setUser] = useState({ name: "", email: "", joined: "" });
+    const [user, setUser] = useState({
+        first_name: "",
+        last_name: "",
+        email: "",
+        joined: "",
+    });
     const [isEditing, setIsEditing] = useState(false);
-    const [newData, setNewData] = useState({ name: "", email: "" });
+    const [newData, setNewData] = useState({
+        first_name: "",
+        last_name: "",
+        email: "",
+    });
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const [passwords, setPasswords] = useState({ old: "", new: "", confirm: "" });
     const token = localStorage.getItem("token");
@@ -29,12 +38,17 @@ export default function ProfilePage() {
             .then((data) => {
                 if (data.success && data.user) {
                     const u = {
-                        name: data.user.name,
+                        first_name: data.user.first_name,
+                        last_name: data.user.last_name,
                         email: data.user.email,
-                        joined: new Date(data.user.created_at).toLocaleDateString(),
+                        joined: new Date(data.user.created_at).toLocaleDateString("uk-UA"),
                     };
                     setUser(u);
-                    setNewData({ name: u.name, email: u.email }); // ✅ синхронізація newData
+                    setNewData({
+                        first_name: u.first_name,
+                        last_name: u.last_name,
+                        email: u.email,
+                    });
                 }
             })
             .catch((err) => console.error("❌ Profile fetch error:", err));
@@ -48,11 +62,11 @@ export default function ProfilePage() {
         window.location.reload();
     };
 
-    // 🔹 Редагування профілю
+    // 🔹 Зберегти зміни профілю
     const handleSave = async () => {
         try {
             const token = localStorage.getItem("token");
-            if (!newData.name || !newData.email) {
+            if (!newData.first_name || !newData.last_name || !newData.email) {
                 alert("⚠️ Заповніть усі поля!");
                 return;
             }
@@ -64,14 +78,20 @@ export default function ProfilePage() {
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    name: newData.name || user.name,
-                    email: newData.email || user.email,
+                    first_name: newData.first_name,
+                    last_name: newData.last_name,
+                    email: newData.email,
                 }),
             });
 
             const data = await res.json();
             if (data.success) {
-                setUser(data.user);
+                setUser({
+                    first_name: data.user.first_name,
+                    last_name: data.user.last_name,
+                    email: data.user.email,
+                    joined: new Date(data.user.created_at).toLocaleDateString("uk-UA"),
+                });
                 setIsEditing(false);
                 alert("✅ Дані успішно оновлено");
             } else {
@@ -131,15 +151,28 @@ export default function ProfilePage() {
                     <div className="space-y-3 mb-4">
                         <input
                             type="text"
-                            value={newData.name}
-                            onChange={(e) => setNewData({ ...newData, name: e.target.value })}
-                            placeholder={t("form_name")}
+                            value={newData.first_name}
+                            onChange={(e) =>
+                                setNewData({ ...newData, first_name: e.target.value })
+                            }
+                            placeholder={t("form_first_name") || "Ім'я"}
+                            className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+                        />
+                        <input
+                            type="text"
+                            value={newData.last_name}
+                            onChange={(e) =>
+                                setNewData({ ...newData, last_name: e.target.value })
+                            }
+                            placeholder={t("form_last_name") || "Прізвище"}
                             className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
                         />
                         <input
                             type="email"
                             value={newData.email}
-                            onChange={(e) => setNewData({ ...newData, email: e.target.value })}
+                            onChange={(e) =>
+                                setNewData({ ...newData, email: e.target.value })
+                            }
                             placeholder={t("form_email")}
                             className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
                         />
@@ -153,7 +186,9 @@ export default function ProfilePage() {
                     </div>
                 ) : (
                     <>
-                        <h2 className="text-2xl font-semibold mb-2">{user.name}</h2>
+                        <h2 className="text-2xl font-semibold mb-2">
+                            {user.first_name} {user.last_name}
+                        </h2>
                         <p className="text-gray-400 mb-4">{user.email}</p>
                         <div className="border-t border-gray-700 pt-4 mt-4 text-sm text-gray-500">
                             <p>
@@ -192,7 +227,9 @@ export default function ProfilePage() {
                             type="password"
                             placeholder={t("old_password")}
                             value={passwords.old}
-                            onChange={(e) => setPasswords({ ...passwords, old: e.target.value })}
+                            onChange={(e) =>
+                                setPasswords({ ...passwords, old: e.target.value })
+                            }
                             className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
                             required
                         />
@@ -200,7 +237,9 @@ export default function ProfilePage() {
                             type="password"
                             placeholder={t("new_password")}
                             value={passwords.new}
-                            onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                            onChange={(e) =>
+                                setPasswords({ ...passwords, new: e.target.value })
+                            }
                             className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
                             required
                         />
@@ -208,7 +247,9 @@ export default function ProfilePage() {
                             type="password"
                             placeholder={t("confirm_password")}
                             value={passwords.confirm}
-                            onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                            onChange={(e) =>
+                                setPasswords({ ...passwords, confirm: e.target.value })
+                            }
                             className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
                             required
                         />
