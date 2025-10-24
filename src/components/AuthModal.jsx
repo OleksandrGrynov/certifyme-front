@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 export default function AuthModal({ isOpen, onClose }) {
     const { t } = useTranslation();
     const [isRegister, setIsRegister] = useState(false);
-    const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+    const [formData, setFormData] = useState({
+        first_name: "",
+        last_name: "",
+        email: "",
+        password: "",
+    });
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
@@ -22,10 +27,22 @@ export default function AuthModal({ isOpen, onClose }) {
                 ? "http://localhost:5000/api/users/register"
                 : "http://localhost:5000/api/users/login";
 
+            const body = isRegister
+                ? {
+                    first_name: formData.first_name,
+                    last_name: formData.last_name,
+                    email: formData.email,
+                    password: formData.password,
+                }
+                : {
+                    email: formData.email,
+                    password: formData.password,
+                };
+
             const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(body),
             });
 
             const data = await res.json();
@@ -41,7 +58,7 @@ export default function AuthModal({ isOpen, onClose }) {
             }
         } catch (err) {
             console.error(err);
-            alert("❌ Server connection error");
+            alert("❌ Помилка з'єднання з сервером");
         } finally {
             setLoading(false);
         }
@@ -49,22 +66,40 @@ export default function AuthModal({ isOpen, onClose }) {
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-gray-900 text-gray-200 rounded-2xl shadow-2xl p-8 w-full max-w-sm">
+            <div className="relative bg-gray-900 text-gray-200 rounded-2xl shadow-2xl p-8 w-full max-w-sm">
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
+                >
+                    ✕
+                </button>
+
                 <h2 className="text-2xl font-semibold text-center mb-4">
                     {isRegister ? t("register_title") : t("login_title")}
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {isRegister && (
-                        <input
-                            name="name"
-                            type="text"
-                            placeholder={t("form_name")}
-                            value={formData.name}
-                            onChange={handleChange}
-                            className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-600"
-                            required
-                        />
+                        <>
+                            <input
+                                name="first_name"
+                                type="text"
+                                placeholder={t("form_first_name") || "Ім’я"}
+                                value={formData.first_name}
+                                onChange={handleChange}
+                                className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-600"
+                                required
+                            />
+                            <input
+                                name="last_name"
+                                type="text"
+                                placeholder={t("form_last_name") || "Прізвище"}
+                                value={formData.last_name}
+                                onChange={handleChange}
+                                className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-600"
+                                required
+                            />
+                        </>
                     )}
 
                     <input
@@ -110,13 +145,6 @@ export default function AuthModal({ isOpen, onClose }) {
                         {isRegister ? t("login_link") : t("register_link")}
                     </button>
                 </p>
-
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                >
-                    ✕
-                </button>
             </div>
         </div>
     );
