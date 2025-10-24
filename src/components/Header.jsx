@@ -22,19 +22,29 @@ export default function Header() {
     const [isAdmin, setIsAdmin] = useState(false);
     const { t, i18n } = useTranslation();
 
-    // 🔹 Перевіряємо, чи користувач авторизований і чи він адмін
+    // 🔹 Безпечна перевірка токена і ролі
     useEffect(() => {
         const token = localStorage.getItem("token");
         const auth = localStorage.getItem("isAuthenticated") === "true";
         setIsAuthenticated(auth);
 
-        if (token) {
+        if (token && token.split(".").length === 3) {
             try {
-                const payload = JSON.parse(atob(token.split(".")[1]));
-                if (payload.role === "admin") setIsAdmin(true);
+                // 🔸 нормалізація Base64URL
+                const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+                const decoded = JSON.parse(atob(base64));
+                if (decoded?.role === "admin") setIsAdmin(true);
             } catch (err) {
-                console.error("JWT decode error:", err);
+                console.warn("⚠️ Некоректний JWT — очищено localStorage");
+                localStorage.removeItem("token");
+                localStorage.removeItem("isAuthenticated");
+                setIsAuthenticated(false);
+                setIsAdmin(false);
             }
+        } else if (token) {
+            console.warn("⚠️ Неправильний формат JWT, видаляю...");
+            localStorage.removeItem("token");
+            localStorage.removeItem("isAuthenticated");
         }
     }, []);
 
@@ -57,46 +67,37 @@ export default function Header() {
     return (
         <header className="bg-gradient-to-r from-green-900 via-green-800 to-black text-gray-300 shadow-md relative z-50">
             <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-3">
-                {/* 🔹 Лого */}
-                <div className="flex items-center space-x-2">
+                <div
+                    onClick={() => (window.location.href = "/")}
+                    className="flex items-center space-x-2 cursor-pointer hover:opacity-90 transition"
+                >
                     <div className="bg-white/10 border border-gray-400 rounded-lg p-2">
                         <span className="text-2xl font-bold text-white">C</span>
                     </div>
-                    <span className="text-lg font-semibold">CertifyMe</span>
+                    <span className="text-lg font-semibold text-white">CertifyMe</span>
                 </div>
+
 
                 {/* 🔹 Навігація */}
                 <nav className="hidden md:flex space-x-6 text-gray-300">
-                    <a
-                        href="/tests"
-                        className="hover:text-white transition flex items-center space-x-1"
-                    >
+                    <a href="/tests" className="hover:text-white transition flex items-center space-x-1">
                         <Award size={18} />
                         <span>{t("nav.tests")}</span>
                     </a>
-                    <a
-                        href="/certificates"
-                        className="hover:text-white transition flex items-center space-x-1"
-                    >
+                    <a href="/certificates" className="hover:text-white transition flex items-center space-x-1">
                         <Trophy size={18} />
                         <span>{t("nav.certificates")}</span>
                     </a>
-                    <a
-                        href="/achievements"
-                        className="hover:text-white transition flex items-center space-x-1"
-                    >
+                    <a href="/achievements" className="hover:text-white transition flex items-center space-x-1">
                         <Trophy size={18} />
                         <span>{t("nav.achievements")}</span>
                     </a>
-                    <a
-                        href="/partners"
-                        className="hover:text-white transition flex items-center space-x-1"
-                    >
+                    <a href="/partners" className="hover:text-white transition flex items-center space-x-1">
                         <Briefcase size={18} />
                         <span>{t("nav.partners")}</span>
                     </a>
 
-                    {/* 🔹 Адмін (тільки для admin role) */}
+                    {/* 🔹 Адмін */}
                     {isAdmin && (
                         <a
                             href="/admin"
@@ -167,30 +168,17 @@ export default function Header() {
             {/* 🔹 Мобільне меню */}
             {isOpen && (
                 <nav className="md:hidden bg-black/90 text-gray-300 flex flex-col items-center space-y-4 py-4">
-                    <a href="/tests" className="hover:text-white transition">
-                        {t("nav.tests")}
-                    </a>
-                    <a href="/certificates" className="hover:text-white transition">
-                        {t("nav.certificates")}
-                    </a>
-                    <a href="/achievements" className="hover:text-white transition">
-                        {t("nav.achievements")}
-                    </a>
-                    <a href="/partners" className="hover:text-white transition">
-                        {t("nav.partners")}
-                    </a>
+                    <a href="/tests" className="hover:text-white transition">{t("nav.tests")}</a>
+                    <a href="/certificates" className="hover:text-white transition">{t("nav.certificates")}</a>
+                    <a href="/achievements" className="hover:text-white transition">{t("nav.achievements")}</a>
+                    <a href="/partners" className="hover:text-white transition">{t("nav.partners")}</a>
 
-                    {/* 🔹 Адмін (мобільна версія) */}
                     {isAdmin && (
-                        <a
-                            href="/admin"
-                            className="hover:text-white transition text-green-400 font-semibold"
-                        >
+                        <a href="/admin" className="hover:text-white transition text-green-400 font-semibold">
                             Admin
                         </a>
                     )}
 
-                    {/* Мови */}
                     <div className="flex items-center space-x-3 border-t border-gray-700 pt-3">
                         <button
                             onClick={() => changeLanguage("ua")}
@@ -210,7 +198,6 @@ export default function Header() {
                         </button>
                     </div>
 
-                    {/* Контакт */}
                     <button
                         onClick={() => setShowModal(true)}
                         className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center space-x-2"
@@ -219,7 +206,6 @@ export default function Header() {
                         <span>{t("nav.contact")}</span>
                     </button>
 
-                    {/* Профіль */}
                     <button
                         onClick={handleProfileClick}
                         className="flex items-center space-x-1 text-gray-300 hover:text-white transition"
