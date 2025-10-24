@@ -5,7 +5,9 @@ import ProfilePage from "./pages/ProfilePage";
 import TestsPage from "./pages/TestsPage";
 import AdminPage from "./pages/AdminPage";
 import AdminTestsPage from "./pages/AdminTestsPage";
-import TestPage from "./pages/TestPage"; // 🆕 імпорт сторінки проходження тесту
+import TestPage from "./pages/TestPage";
+import AchievementsPage from "./pages/AchievementsPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
     return (
@@ -14,10 +16,27 @@ function App() {
                 <Route path="/" element={<Layout />}>
                     <Route index element={<HomePage />} />
                     <Route path="tests" element={<TestsPage />} />
-                    <Route path="tests/:id" element={<TestPage />} /> {/* 🆕 */}
+                    <Route path="tests/:id" element={<TestPage />} />
                     <Route path="profile" element={<ProfilePage />} />
-                    <Route path="admin" element={<AdminPage />} />
-                    <Route path="admin/tests" element={<AdminTestsPage />} />
+                    <Route path="achievements" element={<AchievementsPage />} />
+
+                    {/* 🧱 Адмін маршрути — тільки через ProtectedRoute */}
+                    <Route
+                        path="admin"
+                        element={
+                            <ProtectedRoute requiredRole="admin">
+                                <AdminPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="admin/tests"
+                        element={
+                            <ProtectedRoute requiredRole="admin">
+                                <AdminTestsPage />
+                            </ProtectedRoute>
+                        }
+                    />
                 </Route>
             </Routes>
         </BrowserRouter>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash, Eye, Edit3 } from "lucide-react";
+import { Plus, Trash, Edit3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom"; // 👈 додали для переходу
+import { useNavigate } from "react-router-dom";
 
 export default function AdminPage() {
     const { i18n } = useTranslation();
-    const navigate = useNavigate(); // 👈 хук для переходу між сторінками
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [tests, setTests] = useState([]);
     const [editingTest, setEditingTest] = useState(null);
@@ -13,15 +13,22 @@ export default function AdminPage() {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
+
+        // 👥 Отримати користувачів
         fetch("http://localhost:5000/api/admin/users", {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then((r) => r.json())
-            .then((data) => setUsers(data.users || []));
+            .then((data) => {
+                if (data.success) setUsers(data.users);
+            })
+            .catch((err) => console.error("Помилка отримання користувачів:", err));
 
+        // 📚 Отримати тести
         fetch("http://localhost:5000/api/tests")
             .then((r) => r.json())
-            .then((data) => setTests(data.tests || []));
+            .then((data) => setTests(data.tests || []))
+            .catch((err) => console.error("Помилка отримання тестів:", err));
     }, []);
 
     // 🗑️ Видалити тест
@@ -34,7 +41,7 @@ export default function AdminPage() {
         });
         const data = await res.json();
         if (data.success) {
-            setTests(tests.filter((t) => t.id !== id));
+            setTests((prev) => prev.filter((t) => t.id !== id));
             alert("✅ Тест видалено");
         } else alert("❌ " + data.message);
     };
@@ -58,8 +65,8 @@ export default function AdminPage() {
         });
         const data = await res.json();
         if (data.success) {
-            setTests(
-                tests.map((t) => (t.id === editingTest.id ? data.test : t))
+            setTests((prev) =>
+                prev.map((t) => (t.id === editingTest.id ? data.test : t))
             );
             alert("✅ Тест оновлено!");
             setShowForm(false);
@@ -73,7 +80,6 @@ export default function AdminPage() {
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-3xl font-bold text-green-500">Панель адміністратора</h1>
 
-                    {/* 👇 Додана кнопка */}
                     <button
                         onClick={() => navigate("/admin/tests")}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -96,12 +102,19 @@ export default function AdminPage() {
                     </thead>
                     <tbody>
                     {users.map((u) => (
-                        <tr key={u.id} className="border-b border-gray-700 hover:bg-gray-800/50">
+                        <tr
+                            key={u.id}
+                            className="border-b border-gray-700 hover:bg-gray-800/50"
+                        >
                             <td className="p-3">{u.id}</td>
-                            <td className="p-3">{u.name}</td>
+                            <td className="p-3">
+                                {u.full_name || `${u.first_name || ""} ${u.last_name || ""}`}
+                            </td>
                             <td className="p-3">{u.email}</td>
                             <td className="p-3 text-green-400">{u.role}</td>
-                            <td className="p-3">{new Date(u.created_at).toLocaleDateString()}</td>
+                            <td className="p-3">
+                                {new Date(u.created_at).toLocaleDateString("uk-UA")}
+                            </td>
                         </tr>
                     ))}
                     </tbody>
@@ -116,7 +129,7 @@ export default function AdminPage() {
                                 <img
                                     src={t.image_url}
                                     className="rounded mb-2 h-32 w-full object-cover"
-                                    alt=""
+                                    alt="test preview"
                                 />
                             )}
                             <h3 className="font-bold mb-1">{t.title_ua || t.title_en}</h3>
@@ -144,17 +157,24 @@ export default function AdminPage() {
                 {/* ✏️ Модалка редагування */}
                 {showForm && editingTest && (
                     <div className="mt-8 bg-gray-800 p-6 rounded-lg">
-                        <h3 className="text-xl font-bold text-green-400 mb-4">Редагування тесту</h3>
+                        <h3 className="text-xl font-bold text-green-400 mb-4">
+                            Редагування тесту
+                        </h3>
                         <input
                             value={editingTest.title_ua || editingTest.title_en}
-                            onChange={(e) => setEditingTest({ ...editingTest, title_ua: e.target.value })}
+                            onChange={(e) =>
+                                setEditingTest({ ...editingTest, title_ua: e.target.value })
+                            }
                             className="p-2 w-full bg-gray-700 rounded mb-2"
                             placeholder="Назва тесту"
                         />
                         <textarea
                             value={editingTest.description_ua || editingTest.description_en}
                             onChange={(e) =>
-                                setEditingTest({ ...editingTest, description_ua: e.target.value })
+                                setEditingTest({
+                                    ...editingTest,
+                                    description_ua: e.target.value,
+                                })
                             }
                             className="p-2 w-full bg-gray-700 rounded mb-2"
                             placeholder="Опис тесту"
@@ -162,7 +182,10 @@ export default function AdminPage() {
                         <input
                             value={editingTest.image_url || ""}
                             onChange={(e) =>
-                                setEditingTest({ ...editingTest, image_url: e.target.value })
+                                setEditingTest({
+                                    ...editingTest,
+                                    image_url: e.target.value,
+                                })
                             }
                             className="p-2 w-full bg-gray-700 rounded mb-4"
                             placeholder="URL зображення"

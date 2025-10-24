@@ -13,7 +13,7 @@ export default function HomePage() {
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
             {/* 🌌 Ефектний фон */}
             <LiquidEther
-                colors={["#22C55E", "#0EA5E9", "#9333EA"]}
+                colors={[ '#5227FF', '#FF9FFC', '#B19EEF' ]}
                 mouseForce={20}
                 cursorSize={100}
                 isViscous={false}
