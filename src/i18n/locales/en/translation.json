@@ -8,7 +8,7 @@
     "contact": "Contact Us"
   },
 
-  "welcome_title": "CertifyMe — your platform for knowledge verification",
+  "welcome_title": " your platform for knowledge verification",
   "welcome_subtitle": "Pass online tests, confirm your knowledge, and get an official PDF certificate with a QR code after payment. Fast, secure and simple.",
   "btn_view_courses": "Take a Test",
   "btn_create_course": "Create Test",
@@ -29,6 +29,8 @@
   "top_label": "Get your certificate after the test",
   "discover_potential": "Earn official certificates with CertifyMe",
   "platform_description": "A platform that automates knowledge verification, payments, and certificate generation with a QR code. Validation in one click.",
+  "form_first_name": "First name",
+  "form_last_name": "Last name",
 
   "edit_profile": "Edit Profile",
   "save_changes": "Save Changes",
