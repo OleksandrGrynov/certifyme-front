@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
     Menu,
     X,
-    Globe,
     Phone,
     User,
     Award,
@@ -13,6 +12,7 @@ import {
 import ContactModal from "./ContactModal";
 import AuthModal from "./AuthModal";
 import { useTranslation } from "react-i18next";
+import LanguageToggle from "./LanguageToggle";
 
 export default function Header() {
     const [isOpen, setIsOpen] = useState(false);
@@ -22,6 +22,12 @@ export default function Header() {
     const [isAdmin, setIsAdmin] = useState(false);
     const { t, i18n } = useTranslation();
 
+    // 🔹 при старті зчитуємо мову з localStorage
+    useEffect(() => {
+        const savedLang = localStorage.getItem("i18nextLng") || "ua";
+        i18n.changeLanguage(savedLang);
+    }, [i18n]);
+
     // 🔹 Безпечна перевірка токена і ролі
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -30,25 +36,17 @@ export default function Header() {
 
         if (token && token.split(".").length === 3) {
             try {
-                // 🔸 нормалізація Base64URL
                 const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
                 const decoded = JSON.parse(atob(base64));
                 if (decoded?.role === "admin") setIsAdmin(true);
-            } catch (err) {
-                console.warn("⚠️ Некоректний JWT — очищено localStorage");
+            } catch {
                 localStorage.removeItem("token");
                 localStorage.removeItem("isAuthenticated");
                 setIsAuthenticated(false);
                 setIsAdmin(false);
             }
-        } else if (token) {
-            console.warn("⚠️ Неправильний формат JWT, видаляю...");
-            localStorage.removeItem("token");
-            localStorage.removeItem("isAuthenticated");
         }
     }, []);
-
-    const changeLanguage = (lang) => i18n.changeLanguage(lang);
 
     const handleProfileClick = () => {
         if (isAuthenticated) {
@@ -67,6 +65,7 @@ export default function Header() {
     return (
         <header className="bg-gradient-to-r from-green-900 via-green-800 to-black text-gray-300 shadow-md relative z-50">
             <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-3">
+                {/* 🔹 Логотип */}
                 <div
                     onClick={() => (window.location.href = "/")}
                     className="flex items-center space-x-2 cursor-pointer hover:opacity-90 transition"
@@ -76,7 +75,6 @@ export default function Header() {
                     </div>
                     <span className="text-lg font-semibold text-white">CertifyMe</span>
                 </div>
-
 
                 {/* 🔹 Навігація */}
                 <nav className="hidden md:flex space-x-6 text-gray-300">
@@ -97,7 +95,6 @@ export default function Header() {
                         <span>{t("nav.partners")}</span>
                     </a>
 
-                    {/* 🔹 Адмін */}
                     {isAdmin && (
                         <a
                             href="/admin"
@@ -112,30 +109,7 @@ export default function Header() {
                 {/* 🔹 Права частина */}
                 <div className="hidden md:flex items-center space-x-6">
                     {/* 🌐 Мови */}
-                    <div className="flex items-center space-x-2">
-                        <button
-                            onClick={() => changeLanguage("ua")}
-                            className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                                i18n.language === "ua"
-                                    ? "bg-green-600 text-white"
-                                    : "hover:text-white"
-                            }`}
-                        >
-                            <Globe size={18} />
-                            <span>UA</span>
-                        </button>
-                        <button
-                            onClick={() => changeLanguage("en")}
-                            className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                                i18n.language === "en"
-                                    ? "bg-green-600 text-white"
-                                    : "hover:text-white"
-                            }`}
-                        >
-                            <Globe size={18} />
-                            <span>EN</span>
-                        </button>
-                    </div>
+                    <LanguageToggle />
 
                     {/* 📞 Контакт */}
                     <button
@@ -168,10 +142,18 @@ export default function Header() {
             {/* 🔹 Мобільне меню */}
             {isOpen && (
                 <nav className="md:hidden bg-black/90 text-gray-300 flex flex-col items-center space-y-4 py-4">
-                    <a href="/tests" className="hover:text-white transition">{t("nav.tests")}</a>
-                    <a href="/certificates" className="hover:text-white transition">{t("nav.certificates")}</a>
-                    <a href="/achievements" className="hover:text-white transition">{t("nav.achievements")}</a>
-                    <a href="/partners" className="hover:text-white transition">{t("nav.partners")}</a>
+                    <a href="/tests" className="hover:text-white transition">
+                        {t("nav.tests")}
+                    </a>
+                    <a href="/certificates" className="hover:text-white transition">
+                        {t("nav.certificates")}
+                    </a>
+                    <a href="/achievements" className="hover:text-white transition">
+                        {t("nav.achievements")}
+                    </a>
+                    <a href="/partners" className="hover:text-white transition">
+                        {t("nav.partners")}
+                    </a>
 
                     {isAdmin && (
                         <a href="/admin" className="hover:text-white transition text-green-400 font-semibold">
@@ -179,25 +161,12 @@ export default function Header() {
                         </a>
                     )}
 
-                    <div className="flex items-center space-x-3 border-t border-gray-700 pt-3">
-                        <button
-                            onClick={() => changeLanguage("ua")}
-                            className={`px-2 py-1 rounded ${
-                                i18n.language === "ua" ? "bg-green-600 text-white" : ""
-                            }`}
-                        >
-                            UA
-                        </button>
-                        <button
-                            onClick={() => changeLanguage("en")}
-                            className={`px-2 py-1 rounded ${
-                                i18n.language === "en" ? "bg-green-600 text-white" : ""
-                            }`}
-                        >
-                            EN
-                        </button>
+                    {/* 🌐 Мови */}
+                    <div className="pt-3">
+                        <LanguageToggle />
                     </div>
 
+                    {/* 📞 Контакт */}
                     <button
                         onClick={() => setShowModal(true)}
                         className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center space-x-2"
@@ -206,6 +175,7 @@ export default function Header() {
                         <span>{t("nav.contact")}</span>
                     </button>
 
+                    {/* 👤 Профіль */}
                     <button
                         onClick={handleProfileClick}
                         className="flex items-center space-x-1 text-gray-300 hover:text-white transition"
