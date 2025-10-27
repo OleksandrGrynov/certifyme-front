@@ -8,46 +8,73 @@
     "contact": "Contact Us"
   },
 
-  "welcome_title": " your platform for knowledge verification",
-  "welcome_subtitle": "Pass online tests, confirm your knowledge, and get an official PDF certificate with a QR code after payment. Fast, secure and simple.",
+  "welcome_title": "your platform for knowledge verification",
+  "welcome_subtitle": "Take online tests, prove your skills, and get an official PDF certificate with a QR code after payment. Fast, secure, and convenient.",
   "btn_view_courses": "Take a Test",
-  "btn_create_course": "Create Test",
-  "contact_title": "Contact us",
+  "btn_create_course": "Add Test",
+  "contact_title": "Contact Us",
   "contact_description": "Fill out the form below — we’ll get in touch with you within 24 hours 💬",
+
   "form_name": "Name",
-  "form_email": "Email address",
+  "form_email": "Email",
   "form_phone": "Phone",
   "form_telegram": "Telegram nickname (optional)",
   "form_agree": "I agree with",
-  "form_terms": "the Terms of Use and personal data policy",
+  "form_terms": "the Terms of Use and Privacy Policy",
   "form_submit": "Submit",
   "placeholder_name": "Your name",
   "placeholder_email": "Email address",
   "error_invalid_phone": "Invalid phone number",
   "form_check_error": "⚠️ Please check the form for errors",
   "form_success": "✅ Thank you! We’ll contact you within 24 hours.",
+
   "top_label": "Get your certificate after the test",
   "discover_potential": "Earn official certificates with CertifyMe",
-  "platform_description": "A platform that automates knowledge verification, payments, and certificate generation with a QR code. Validation in one click.",
-  "form_first_name": "First name",
-  "form_last_name": "Last name",
+  "platform_description": "A platform that automates testing, payments, and certificate generation with QR codes. Verification in one click.",
 
   "edit_profile": "Edit Profile",
   "save_changes": "Save Changes",
   "change_password": "Change Password",
   "old_password": "Old Password",
   "new_password": "New Password",
-  "confirm_password": "Confirm New Password",
+  "confirm_password": "Confirm Password",
   "confirm": "Confirm",
   "logout": "Log Out",
   "member_since": "Member since:",
-
   "profile_updated": "✅ Profile updated successfully",
   "password_changed": "✅ Password updated successfully",
   "passwords_not_match": "❌ New password and confirmation do not match",
   "update_error": "Error while updating",
   "server_error": "Server error",
-  "tests_title": "Knowledge Check Tests",
+
+  "form_first_name": "First Name",
+  "form_last_name": "Last Name",
+  "form_password": "Password",
+
+  "login_title": "Login",
+  "register_title": "Sign Up",
+  "login_subtitle": "Welcome back 👋",
+  "register_subtitle": "Create an account to start learning!",
+  "login_button": "Login",
+  "register_button": "Sign Up",
+  "loading": "Loading...",
+
+  "no_account": "Don't have an account?",
+  "already_account": "Already have an account?",
+  "login_link": "Login",
+  "register_link": "Sign Up",
+  "or": "or",
+
+  "create_password_title": "Create a password to sign in without Google",
+  "create_password_placeholder": "Enter new password",
+  "save_password": "Save Password",
+  "password_created": "✅ Password created! You can now sign in without Google.",
+  "error_login": "❌ Login error",
+  "error_connection": "❌ Connection error",
+  "error_google": "❌ Google authorization failed",
+  "error_general": "❌ Something went wrong",
+
+  "tests_title": "Knowledge Tests",
   "start_test": "Start Test",
 
   "cards": {
@@ -57,9 +84,9 @@
       "description": "Choose a test by topic — IT, design, marketing and more"
     },
     "create": {
-      "label": "For Instructors",
-      "title": "Create a Test",
-      "description": "Upload your own test and generate certificates for your students"
+      "label": "For Teachers",
+      "title": "Add Test",
+      "description": "Create your own test and issue certificates for students"
     },
     "profile": {
       "label": "Profile",
@@ -69,17 +96,17 @@
     "reviews": {
       "label": "Results",
       "title": "Test Results",
-      "description": "Check your previous attempts and track progress"
+      "description": "Check your previous attempts and track your progress"
     },
     "career": {
       "label": "Verification",
       "title": "Certificate Verification",
-      "description": "Verify the authenticity of any certificate via QR code"
+      "description": "Verify the authenticity of any document via QR code"
     },
     "support": {
       "label": "Support",
       "title": "24/7 Helpdesk",
-      "description": "Need help? Our team is always ready to assist you"
+      "description": "Have a question? Our team is always ready to help"
     }
   }
 }
