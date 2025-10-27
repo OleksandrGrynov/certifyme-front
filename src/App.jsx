@@ -8,6 +8,8 @@ import AdminTestsPage from "./pages/AdminTestsPage";
 import TestPage from "./pages/TestPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import EmailVerifyPage from "./pages/EmailVerifyPage";
+
 
 function App() {
     return (
@@ -19,6 +21,8 @@ function App() {
                     <Route path="tests/:id" element={<TestPage />} />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="achievements" element={<AchievementsPage />} />
+                    <Route path="verify/:token" element={<EmailVerifyPage />} />
+
 
                     {/* 🧱 Адмін маршрути — тільки через ProtectedRoute */}
                     <Route
