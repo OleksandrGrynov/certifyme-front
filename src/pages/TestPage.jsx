@@ -11,6 +11,7 @@ import {
     LabelList,
 } from "recharts";
 import { updateAchievementsBatch } from "../services/achievementsService";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function TestPage() {
     const { id } = useParams();
@@ -68,33 +69,62 @@ export default function TestPage() {
         setScore(correct);
         setSubmitted(true);
 
-        // 🟢 Додаємо виклик оновлення досягнень
         try {
             const total = test.questions.length;
             const percent = Math.round((correct / total) * 100);
             const updates = [];
 
-            // 1️⃣ Перший сертифікат
+            // 🏅 Перший сертифікат
             updates.push({ code: "first_certificate", progress: 100 });
 
-            // 2️⃣ Розумник (усі правильні)
+            // 🧠 Розумник (усі правильні)
             if (total > 0 && correct === total) {
                 updates.push({ code: "no_mistakes", progress: 100 });
             }
 
-            // 3️⃣ Серія успіхів ≥ 90%
+            // ⚡ Серія ≥ 90%
             if (percent >= 90) {
                 updates.push({ code: "streak_3_over_90", progress: 34 });
             }
 
             if (updates.length > 0) {
+                // ✅ Відразу після кліку користувача (дозволений звук)
+                const audio = new Audio("/unlock.mp3");
+                audio.volume = 0.4;
+                audio.play().catch(() => {});
+
+                // 🟩 Надсилаємо оновлення на бек
                 await updateAchievementsBatch(updates);
-                console.log("✅ Achievements updated:", updates);
+
+                // 🟢 Показуємо toast прямо тут
+                updates.forEach((ach) => {
+                    let title =
+                        ach.code === "first_certificate"
+                            ? lang === "ua"
+                                ? "Перший сертифікат!"
+                                : "First certificate!"
+                            : ach.code === "no_mistakes"
+                                ? lang === "ua"
+                                    ? "Усі відповіді правильні!"
+                                    : "All answers correct!"
+                                : lang === "ua"
+                                    ? "Високий результат!"
+                                    : "High score!";
+
+                    toast.success(`🏆 ${title}`, {
+                        style: {
+                            background: "#111",
+                            color: "#22c55e",
+                            border: "1px solid #22c55e",
+                        },
+                    });
+                });
             }
         } catch (err) {
             console.error("❌ Failed to update achievements:", err);
         }
     };
+
 
     const COLORS = ["#22c55e", "#ef4444"];
     const data = [
@@ -324,6 +354,8 @@ export default function TestPage() {
                     </div>
                 )}
             </div>
+            <Toaster position="top-center" />
+
         </section>
     );
 }
