@@ -31,8 +31,34 @@ export default function AdminPage() {
             .catch((err) => console.error("Помилка отримання тестів:", err));
     }, []);
 
+    // 🗑️ Видалити користувача
+    const handleDeleteUser = async (id, email) => {
+        if (!window.confirm(`Видалити користувача ${email}?`)) return;
+        const token = localStorage.getItem("token");
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = await res.json();
+            if (data.success) {
+                setUsers((prev) => prev.filter((u) => u.id !== id));
+                alert("✅ Користувача видалено");
+            } else {
+                alert("❌ " + (data.message || "Помилка видалення"));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("❌ Серверна помилка при видаленні");
+        }
+    };
+
     // 🗑️ Видалити тест
-    const handleDelete = async (id) => {
+    const handleDeleteTest = async (id) => {
         if (!window.confirm("Видалити цей тест?")) return;
         const token = localStorage.getItem("token");
         const res = await fetch(`http://localhost:5000/api/tests/${id}`, {
@@ -46,13 +72,13 @@ export default function AdminPage() {
         } else alert("❌ " + data.message);
     };
 
-    // ✏️ Почати редагування
+    // ✏️ Почати редагування тесту
     const handleEdit = (test) => {
         setEditingTest(test);
         setShowForm(true);
     };
 
-    // 💾 Зберегти зміни
+    // 💾 Зберегти зміни тесту
     const handleUpdate = async () => {
         const token = localStorage.getItem("token");
         const res = await fetch(`http://localhost:5000/api/tests/${editingTest.id}`, {
@@ -98,13 +124,14 @@ export default function AdminPage() {
                         <th className="p-3">Email</th>
                         <th className="p-3">Роль</th>
                         <th className="p-3">Дата створення</th>
+                        <th className="p-3 text-center">Дія</th>
                     </tr>
                     </thead>
                     <tbody>
                     {users.map((u) => (
                         <tr
                             key={u.id}
-                            className="border-b border-gray-700 hover:bg-gray-800/50"
+                            className="border-b border-gray-700 hover:bg-gray-800/50 transition"
                         >
                             <td className="p-3">{u.id}</td>
                             <td className="p-3">
@@ -114,6 +141,18 @@ export default function AdminPage() {
                             <td className="p-3 text-green-400">{u.role}</td>
                             <td className="p-3">
                                 {new Date(u.created_at).toLocaleDateString("uk-UA")}
+                            </td>
+                            <td className="p-3 text-center">
+                                {u.role !== "admin" ? (
+                                    <button
+                                        onClick={() => handleDeleteUser(u.id, u.email)}
+                                        className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded flex items-center justify-center gap-1 mx-auto"
+                                    >
+                                        <Trash size={16} /> Видалити
+                                    </button>
+                                ) : (
+                                    <span className="text-gray-500 italic">Адмін</span>
+                                )}
                             </td>
                         </tr>
                     ))}
@@ -144,7 +183,7 @@ export default function AdminPage() {
                                     <Edit3 size={16} /> Редагувати
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(t.id)}
+                                    onClick={() => handleDeleteTest(t.id)}
                                     className="bg-red-600 hover:bg-red-700 flex-1 py-1 rounded flex items-center justify-center gap-1"
                                 >
                                     <Trash size={16} /> Видалити
