@@ -13,23 +13,57 @@ export default function AchievementsPage() {
         global: true,
         creative: true,
     });
+    const [audioUnlocked, setAudioUnlocked] = useState(false);
 
     const { i18n } = useTranslation();
     const lang = i18n.language === "en" ? "en" : "ua";
 
+    // 🟢 Завантаження досягнень
+    const loadAchievements = async () => {
+        try {
+            const data = await getUserAchievements();
+            setAchievements(data);
+        } catch (err) {
+            console.error("❌ Failed to load achievements:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 📦 Ініціалізація
     useEffect(() => {
-        const load = async () => {
-            try {
-                const data = await getUserAchievements();
-                setAchievements(data);
-            } catch (err) {
-                console.error("❌ Failed to load achievements:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
+        loadAchievements();
+
+        // 🔁 Автооновлення після розблокування
+        const reload = () => loadAchievements();
+        window.addEventListener("achievementUpdated", reload);
+        return () => window.removeEventListener("achievementUpdated", reload);
     }, []);
+
+    // 🔊 Надійне розблокування аудіо (Chrome 2025+)
+    useEffect(() => {
+        const unlock = () => {
+            const audio = new Audio("/unlock.mp3");
+            audio.volume = 0;
+            const playPromise = audio.play();
+
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        console.log("✅ Audio context unlocked");
+                        setAudioUnlocked(true);
+                    })
+                    .catch(err => console.warn("⚠️ Unlock failed:", err.message));
+            }
+            window.removeEventListener("pointerdown", unlock);
+        };
+
+        window.addEventListener("pointerdown", unlock);
+        return () => window.removeEventListener("pointerdown", unlock);
+    }, []);
+
 
     if (loading) {
         return (
@@ -90,8 +124,17 @@ export default function AchievementsPage() {
     const playUnlockEffect = (achievement) => {
         if (!localStorage.getItem(`unlocked-${achievement.id}`)) {
             const audio = new Audio("/unlock.mp3");
-            audio.volume = 0.4;
-            audio.play().catch(() => {});
+            audio.volume = 0.7;
+
+            if (audioUnlocked) {
+                audio
+                    .play()
+                    .then(() => console.log("✅ Sound played"))
+                    .catch((err) => console.warn("⚠️ Audio blocked:", err.message));
+            } else {
+                console.log("⚠️ Audio not yet unlocked by user click");
+            }
+
             toast.success(
                 lang === "ua"
                     ? `🏆 Ви розблокували "${achievement.title_ua}"!`
@@ -124,7 +167,6 @@ export default function AchievementsPage() {
             <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-10">
                 {Object.keys(grouped).map((category, catIndex) => (
                     <div key={category} className="mb-10">
-                        {/* Заголовок секції */}
                         <motion.div
                             className="flex justify-between items-center cursor-pointer mb-4 border-b border-gray-700 pb-2"
                             onClick={() => toggleSection(category)}
@@ -143,7 +185,6 @@ export default function AchievementsPage() {
                             </span>
                         </motion.div>
 
-                        {/* Контент секції */}
                         <AnimatePresence initial={false}>
                             {openSections[category] && (
                                 <motion.div
