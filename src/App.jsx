@@ -9,6 +9,11 @@ import TestPage from "./pages/TestPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import EmailVerifyPage from "./pages/EmailVerifyPage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyCertificate from "./pages/VerifyCertificate";
+import MyCertificates from "./pages/MyCertificates";
+import AdminEditTestPage from "./pages/AdminEditTestPage";
 
 
 function App() {
@@ -20,8 +25,12 @@ function App() {
                     <Route path="tests" element={<TestsPage />} />
                     <Route path="tests/:id" element={<TestPage />} />
                     <Route path="profile" element={<ProfilePage />} />
+                    <Route path="/verify/:cert_id" element={<VerifyCertificate />} />
                     <Route path="achievements" element={<AchievementsPage />} />
                     <Route path="verify/:token" element={<EmailVerifyPage />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password/:token" element={<ResetPassword />} />
+                    <Route path="my-certificates" element={<MyCertificates />} />
 
 
                     {/* 🧱 Адмін маршрути — тільки через ProtectedRoute */}
@@ -42,6 +51,15 @@ function App() {
                         }
                     />
                 </Route>
+                <Route
+                    path="admin/tests/:id"
+                    element={
+                        <ProtectedRoute requiredRole="admin">
+                            <AdminEditTestPage />
+                        </ProtectedRoute>
+                    }
+                />
+
             </Routes>
         </BrowserRouter>
     );
