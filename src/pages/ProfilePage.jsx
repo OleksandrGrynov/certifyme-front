@@ -77,11 +77,7 @@ export default function ProfilePage() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    first_name: newData.first_name,
-                    last_name: newData.last_name,
-                    email: newData.email,
-                }),
+                body: JSON.stringify(newData),
             });
 
             const data = await res.json();
@@ -103,16 +99,17 @@ export default function ProfilePage() {
         }
     };
 
-    // 🔒 Зміна пароля
+    // 🔒 Зміна пароля (користувач пам’ятає старий пароль)
     const handlePasswordChange = async (e) => {
         e.preventDefault();
+
         if (passwords.new !== passwords.confirm) {
-            alert(t("passwords_not_match"));
+            alert(t("passwords_not_match") || "❌ Новий пароль не співпадає з підтвердженням");
             return;
         }
 
         try {
-            const res = await fetch("http://localhost:5000/api/users/password", {
+            const res = await fetch("http://localhost:5000/api/users/change-password", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -126,15 +123,35 @@ export default function ProfilePage() {
 
             const data = await res.json();
             if (data.success) {
-                alert(t("password_changed"));
+                alert("✅ Пароль успішно змінено! Ми надіслали лист-підтвердження на вашу пошту.");
                 setPasswords({ old: "", new: "", confirm: "" });
                 setShowPasswordForm(false);
             } else {
-                alert(data.message || t("update_error"));
+                alert("❌ " + (data.message || "Помилка зміни пароля"));
             }
         } catch (err) {
             console.error(err);
-            alert(t("server_error"));
+            alert("❌ Помилка сервера при зміні пароля");
+        }
+    };
+
+    // 🔹 Відновлення пароля через email (якщо користувач забув старий)
+    const handleForgotPassword = async () => {
+        try {
+            const res = await fetch("http://localhost:5000/api/users/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: user.email }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("📩 Ми надіслали лист із інструкцією для зміни пароля на вашу пошту!");
+            } else {
+                alert("❌ " + (data.message || "Помилка при надсиланні листа"));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("❌ Не вдалося надіслати лист");
         }
     };
 
@@ -152,27 +169,21 @@ export default function ProfilePage() {
                         <input
                             type="text"
                             value={newData.first_name}
-                            onChange={(e) =>
-                                setNewData({ ...newData, first_name: e.target.value })
-                            }
+                            onChange={(e) => setNewData({ ...newData, first_name: e.target.value })}
                             placeholder={t("form_first_name") || "Ім'я"}
                             className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
                         />
                         <input
                             type="text"
                             value={newData.last_name}
-                            onChange={(e) =>
-                                setNewData({ ...newData, last_name: e.target.value })
-                            }
+                            onChange={(e) => setNewData({ ...newData, last_name: e.target.value })}
                             placeholder={t("form_last_name") || "Прізвище"}
                             className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
                         />
                         <input
                             type="email"
                             value={newData.email}
-                            onChange={(e) =>
-                                setNewData({ ...newData, email: e.target.value })
-                            }
+                            onChange={(e) => setNewData({ ...newData, email: e.target.value })}
                             placeholder={t("form_email")}
                             className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
                         />
@@ -215,6 +226,13 @@ export default function ProfilePage() {
                             <Lock size={18} />
                             <span>{t("change_password")}</span>
                         </button>
+
+                        <button
+                            onClick={handleForgotPassword}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 transition text-white py-2 rounded-lg"
+                        >
+                            🔐 Відновити пароль через пошту
+                        </button>
                     </div>
                 )}
 
@@ -225,31 +243,25 @@ export default function ProfilePage() {
                     >
                         <input
                             type="password"
-                            placeholder={t("old_password")}
+                            placeholder={t("old_password") || "Старий пароль"}
                             value={passwords.old}
-                            onChange={(e) =>
-                                setPasswords({ ...passwords, old: e.target.value })
-                            }
+                            onChange={(e) => setPasswords({ ...passwords, old: e.target.value })}
                             className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
                             required
                         />
                         <input
                             type="password"
-                            placeholder={t("new_password")}
+                            placeholder={t("new_password") || "Новий пароль"}
                             value={passwords.new}
-                            onChange={(e) =>
-                                setPasswords({ ...passwords, new: e.target.value })
-                            }
+                            onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
                             className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
                             required
                         />
                         <input
                             type="password"
-                            placeholder={t("confirm_password")}
+                            placeholder={t("confirm_password") || "Підтвердьте пароль"}
                             value={passwords.confirm}
-                            onChange={(e) =>
-                                setPasswords({ ...passwords, confirm: e.target.value })
-                            }
+                            onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
                             className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
                             required
                         />
@@ -257,7 +269,7 @@ export default function ProfilePage() {
                             type="submit"
                             className="w-full bg-blue-600 hover:bg-blue-700 transition text-white py-2 rounded-lg"
                         >
-                            {t("confirm")}
+                            {t("confirm") || "Підтвердити"}
                         </button>
                     </form>
                 )}
