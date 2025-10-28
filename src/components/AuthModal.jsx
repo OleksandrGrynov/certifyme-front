@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { GoogleLogin } from "@react-oauth/google";
 import { Mail, Lock, Eye, EyeOff, User, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import OtpVerifyModal from "./OtpVerifyModal"; // 👈 додаємо компонент OTP з попереднього кроку
+import OtpVerifyModal from "./OtpVerifyModal";
 
 export default function AuthModal({ isOpen, onClose }) {
     const { t } = useTranslation();
@@ -18,9 +18,13 @@ export default function AuthModal({ isOpen, onClose }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showSetPassword, setShowSetPassword] = useState(false);
     const [newPassword, setNewPassword] = useState("");
-
-    // 🔹 новий стан для OTP-вікна
     const [showOtpModal, setShowOtpModal] = useState(false);
+
+    // 🔹 нові стани для "Забули пароль"
+    const [showForgot, setShowForgot] = useState(false);
+    const [resetEmail, setResetEmail] = useState("");
+    const [resetMessage, setResetMessage] = useState("");
+    const [sending, setSending] = useState(false);
 
     if (!isOpen) return null;
 
@@ -34,7 +38,6 @@ export default function AuthModal({ isOpen, onClose }) {
 
         try {
             if (isRegister) {
-                // 🔸 Реєстрація з OTP
                 const res = await fetch("http://localhost:5000/api/users/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -44,13 +47,11 @@ export default function AuthModal({ isOpen, onClose }) {
 
                 if (res.ok) {
                     alert(data.message);
-                    // відкриваємо OTP модалку
                     setShowOtpModal(true);
                 } else {
                     alert(data.message || "Помилка реєстрації");
                 }
             } else {
-                // 🔹 Логін звичайний
                 const res = await fetch("http://localhost:5000/api/users/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -115,6 +116,27 @@ export default function AuthModal({ isOpen, onClose }) {
             } else alert(result.message || t("error_general"));
         } catch {
             alert(t("error_connection"));
+        }
+    };
+
+    // 🔹 Відправлення запиту "Забув пароль"
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setSending(true);
+        setResetMessage("");
+
+        try {
+            const res = await fetch("http://localhost:5000/api/users/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: resetEmail }),
+            });
+            const data = await res.json();
+            setResetMessage(data.message || "Перевірте пошту 💚");
+        } catch {
+            setResetMessage("❌ Помилка з'єднання з сервером");
+        } finally {
+            setSending(false);
         }
     };
 
@@ -228,6 +250,18 @@ export default function AuthModal({ isOpen, onClose }) {
                             </button>
                         </form>
 
+                        {!isRegister && (
+                            <p className="text-center text-sm mt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgot(true)}
+                                    className="text-green-400 hover:underline"
+                                >
+                                    Забули пароль?
+                                </button>
+                            </p>
+                        )}
+
                         <div className="flex items-center my-6">
                             <div className="flex-1 h-px bg-gray-700"></div>
                             <span className="px-3 text-gray-500 text-sm">{t("or")}</span>
@@ -294,6 +328,57 @@ export default function AuthModal({ isOpen, onClose }) {
                             className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
                         >
                             {t("save_password")}
+                        </button>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* 🔹 Модалка "Забув пароль" */}
+            {showForgot && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70] backdrop-blur-sm">
+                    <motion.div
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-gray-900 text-gray-200 rounded-2xl shadow-2xl p-8 w-full max-w-sm border border-gray-700"
+                    >
+                        <h3 className="text-xl font-semibold text-center mb-4 text-green-400">
+                            🔐 Відновлення пароля
+                        </h3>
+
+                        <p className="text-sm text-gray-400 text-center mb-4">
+                            Введіть вашу пошту, і ми надішлемо інструкцію для зміни пароля.
+                        </p>
+
+                        <form onSubmit={handleForgotPassword} className="space-y-3">
+                            <input
+                                type="email"
+                                placeholder="Ваша електронна пошта"
+                                value={resetEmail}
+                                onChange={(e) => setResetEmail(e.target.value)}
+                                required
+                                className="w-full bg-gray-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600"
+                            />
+                            <button
+                                type="submit"
+                                disabled={sending}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
+                            >
+                                {sending ? "Надсилання..." : "Надіслати лист"}
+                            </button>
+                        </form>
+
+                        {resetMessage && (
+                            <p className="text-center text-sm mt-3 text-gray-300 bg-gray-800/50 rounded-lg p-2">
+                                {resetMessage}
+                            </p>
+                        )}
+
+                        <button
+                            onClick={() => setShowForgot(false)}
+                            className="mt-4 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-lg"
+                        >
+                            Назад
                         </button>
                     </motion.div>
                 </div>
