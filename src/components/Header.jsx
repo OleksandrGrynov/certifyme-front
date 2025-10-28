@@ -8,6 +8,7 @@ import {
     Briefcase,
     Trophy,
     Shield,
+    FileText,
 } from "lucide-react";
 import ContactModal from "./ContactModal";
 import AuthModal from "./AuthModal";
@@ -22,13 +23,13 @@ export default function Header() {
     const [isAdmin, setIsAdmin] = useState(false);
     const { t, i18n } = useTranslation();
 
-    // 🔹 при старті зчитуємо мову з localStorage
+    // 🔹 Зчитування мови з localStorage при старті
     useEffect(() => {
         const savedLang = localStorage.getItem("i18nextLng") || "ua";
         i18n.changeLanguage(savedLang);
     }, [i18n]);
 
-    // 🔹 Безпечна перевірка токена і ролі
+    // 🔹 Перевірка токена і ролі користувача
     useEffect(() => {
         const token = localStorage.getItem("token");
         const auth = localStorage.getItem("isAuthenticated") === "true";
@@ -76,15 +77,15 @@ export default function Header() {
                     <span className="text-lg font-semibold text-white">CertifyMe</span>
                 </div>
 
-                {/* 🔹 Навігація */}
+                {/* 🔹 Навігація (Desktop) */}
                 <nav className="hidden md:flex space-x-6 text-gray-300">
                     <a href="/tests" className="hover:text-white transition flex items-center space-x-1">
                         <Award size={18} />
                         <span>{t("nav.tests")}</span>
                     </a>
-                    <a href="/certificates" className="hover:text-white transition flex items-center space-x-1">
-                        <Trophy size={18} />
-                        <span>{t("nav.certificates")}</span>
+                    <a href="/my-certificates" className="hover:text-white transition flex items-center space-x-1">
+                        <FileText size={18} />
+                        <span>Мої сертифікати</span>
                     </a>
                     <a href="/achievements" className="hover:text-white transition flex items-center space-x-1">
                         <Trophy size={18} />
@@ -145,8 +146,8 @@ export default function Header() {
                     <a href="/tests" className="hover:text-white transition">
                         {t("nav.tests")}
                     </a>
-                    <a href="/certificates" className="hover:text-white transition">
-                        {t("nav.certificates")}
+                    <a href="/my-certificates" className="hover:text-white transition">
+                        Мої сертифікати
                     </a>
                     <a href="/achievements" className="hover:text-white transition">
                         {t("nav.achievements")}
