@@ -1,18 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-    PieChart,
-    Pie,
-    Cell,
-    ResponsiveContainer,
-    Tooltip,
-    Legend,
-    LabelList,
-} from "recharts";
-import { updateAchievementsBatch } from "../services/achievementsService";
+import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
-
+import {jwtDecode} from "jwt-decode";
 export default function TestPage() {
     const { id } = useParams();
     const { i18n } = useTranslation();
@@ -22,13 +13,25 @@ export default function TestPage() {
     const [answers, setAnswers] = useState({});
     const [submitted, setSubmitted] = useState(false);
     const [score, setScore] = useState(0);
+    const [explanations, setExplanations] = useState({});
 
+    // 📦 Завантаження кешу
+    useEffect(() => {
+        const saved = localStorage.getItem(`explanations_${id}`);
+        if (saved) setExplanations(JSON.parse(saved));
+    }, [id]);
+
+    // 💾 Збереження кешу
+    useEffect(() => {
+        if (Object.keys(explanations).length > 0)
+            localStorage.setItem(`explanations_${id}`, JSON.stringify(explanations));
+    }, [explanations, id]);
+
+    // 📥 Завантаження тесту
     useEffect(() => {
         fetch(`http://localhost:5000/api/tests/${id}`)
             .then((r) => r.json())
-            .then((data) => {
-                if (data.success) setTest(data.test);
-            })
+            .then((data) => data.success && setTest(data.test))
             .catch((err) => console.error("❌ Помилка завантаження тесту:", err));
     }, [id]);
 
@@ -42,112 +45,204 @@ export default function TestPage() {
     const getText = (item, field) =>
         item?.[`${field}_${lang}`] || item?.[`${field}_ua`] || "";
 
+    // ✅ Обробка вибору відповіді
     const handleSelect = (qId, aId, checked) => {
         setAnswers((prev) => {
-            const current = prev[qId] || [];
             const updated = checked
-                ? [...current, aId]
-                : current.filter((x) => x !== aId);
+                ? [...(prev[qId] || []), aId]
+                : (prev[qId] || []).filter((x) => x !== aId);
             return { ...prev, [qId]: updated };
         });
     };
 
-    const handleSubmit = async () => {
-        let correct = 0;
+    // 🔊 Відтворення звуку
+    const playUnlockSound = () => {
+        const audio = new Audio("/unlock.mp3");
+        audio.volume = 0.8;
+        audio.currentTime = 0;
+        audio.play().catch((err) => console.warn("⚠️ Sound blocked:", err.message));
+    };
 
-        test.questions.forEach((q) => {
-            const correctAnswers = q.answers
-                .filter((a) => String(a.is_correct) === "true")
-                .map((a) => a.id);
-            const selected = answers[q.id] || [];
-            const isFullyCorrect =
-                correctAnswers.length === selected.length &&
-                correctAnswers.every((id) => selected.includes(id));
-            if (isFullyCorrect) correct++;
-        });
-
-        setScore(correct);
-        setSubmitted(true);
-
+    // 🏆 Розблокування досягнення (оновлено)
+    const unlockAchievement = async (code) => {
         try {
-            const total = test.questions.length;
-            const percent = Math.round((correct / total) * 100);
-            const updates = [];
+            const token = localStorage.getItem("token");
+            if (!token) return;
 
-            // 🏅 Перший сертифікат
-            updates.push({ code: "first_certificate", progress: 100 });
+            // 🔍 Отримуємо ID користувача з токена
+            const user = jwtDecode(token);
+            const userId = user?.id || user?.user_id || user?.email || "guest";
 
-            // 🧠 Розумник (усі правильні)
-            if (total > 0 && correct === total) {
-                updates.push({ code: "no_mistakes", progress: 100 });
-            }
+            const res = await fetch("http://localhost:5000/api/achievements/unlock", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ code }),
+            });
 
-            // ⚡ Серія ≥ 90%
-            if (percent >= 90) {
-                updates.push({ code: "streak_3_over_90", progress: 34 });
-            }
+            const data = await res.json();
 
-            if (updates.length > 0) {
-                // ✅ Відразу після кліку користувача (дозволений звук)
-                const audio = new Audio("/unlock.mp3");
-                audio.volume = 0.4;
-                audio.play().catch(() => {});
+            if (data.success && data.achievement) {
+                // 🔑 Унікальний ключ для конкретного користувача і досягнення
+                const key = `shown-achievement-${userId}-${data.achievement.id}`;
 
-                // 🟩 Надсилаємо оновлення на бек
-                await updateAchievementsBatch(updates);
+                // ✅ показуємо тільки 1 раз для цього користувача
+                if (!localStorage.getItem(key)) {
+                    localStorage.setItem(key, "true");
 
-                // 🟢 Показуємо toast прямо тут
-                updates.forEach((ach) => {
-                    let title =
-                        ach.code === "first_certificate"
-                            ? lang === "ua"
-                                ? "Перший сертифікат!"
-                                : "First certificate!"
-                            : ach.code === "no_mistakes"
-                                ? lang === "ua"
-                                    ? "Усі відповіді правильні!"
-                                    : "All answers correct!"
-                                : lang === "ua"
-                                    ? "Високий результат!"
-                                    : "High score!";
+                    toast.success(
+                        lang === "ua"
+                            ? `🏆 Досягнення розблоковано: ${data.achievement.title_ua}`
+                            : `🏆 Achievement unlocked: ${data.achievement.title_en}`,
+                        {
+                            style: {
+                                background: "#111",
+                                color: "#22c55e",
+                                border: "1px solid #22c55e",
+                            },
+                        }
+                    );
 
-                    toast.success(`🏆 ${title}`, {
-                        style: {
-                            background: "#111",
-                            color: "#22c55e",
-                            border: "1px solid #22c55e",
-                        },
-                    });
-                });
+                    playUnlockSound();
+                    window.dispatchEvent(new Event("achievementUpdated"));
+                } else {
+                    console.log(
+                        `🟢 Досягнення "${data.achievement.title_ua}" вже показано для користувача ${userId}`
+                    );
+                }
             }
         } catch (err) {
-            console.error("❌ Failed to update achievements:", err);
+            console.error("❌ Achievement unlock failed:", err);
         }
     };
 
 
-    const COLORS = ["#22c55e", "#ef4444"];
-    const data = [
-        { name: lang === "ua" ? "Правильні" : "Correct", value: score },
-        {
-            name: lang === "ua" ? "Неправильні" : "Incorrect",
-            value: test.questions.length - score,
-        },
-    ];
+    // ✅ Обробка результату
+    const handleSubmit = async () => {
+        let correct = 0;
+        test.questions.forEach((q) => {
+            const correctAnswers = q.answers.filter((a) => a.is_correct).map((a) => a.id);
+            const selected = answers[q.id] || [];
+            const isRight =
+                correctAnswers.length === selected.length &&
+                correctAnswers.every((id) => selected.includes(id));
+            if (isRight) correct++;
+        });
+        setScore(correct);
+        setSubmitted(true);
+
+        try {
+            await unlockAchievement("first_certificate");
+            if (correct === test.questions.length)
+                await unlockAchievement("no_mistakes");
+        } catch (err) {
+            console.error("❌ Помилка при оновленні досягнення:", err);
+        }
+    };
+
+    // 🧠 Отримати пояснення (GPT)
+    const handleExplain = async (q, i) => {
+        if (explanations[i]) {
+            setExplanations((prev) => ({
+                ...prev,
+                [i]: { ...prev[i], visible: !prev[i].visible },
+            }));
+            return;
+        }
+
+        const userAnswer = q.answers.find((a) =>
+            (answers[q.id] || []).includes(a.id)
+        )?.answer_ua;
+
+        try {
+            const res = await fetch("http://localhost:5000/api/tests/explain-one", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: q.question_ua,
+                    options: q.answers.map((a) => a.answer_ua),
+                    correct: q.answers.find((a) => a.is_correct)?.answer_ua,
+                    userAnswer,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                const cleanUa = data.explanation_ua.replace(/\*\*/g, "").trim();
+                const cleanEn = data.explanation_en.replace(/\*\*/g, "").trim();
+                setExplanations((prev) => ({
+                    ...prev,
+                    [i]: { ua: cleanUa, en: cleanEn, visible: true },
+                }));
+            } else toast.error("❌ Не вдалося отримати пояснення");
+        } catch {
+            toast.error("❌ Сервер недоступний");
+        }
+    };
+
+    // 🎓 Генерація PDF сертифіката
+    const handleCertificate = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return toast.error("Спочатку увійди у свій акаунт!");
+
+            const res = await fetch("http://localhost:5000/api/tests/certificate", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    test_title: getText(test, "title"),
+                    score,
+                    total: test.questions.length,
+                }),
+            });
+
+            if (!res.ok) throw new Error("Download failed");
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Certificate_${getText(test, "title")}.pdf`;
+            a.click();
+
+            toast.success(
+                lang === "ua" ? "🎓 Сертифікат згенеровано!" : "🎓 Certificate generated!"
+            );
+        } catch {
+            toast.error("❌ Не вдалося згенерувати сертифікат");
+        }
+    };
 
     return (
         <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
-            <div className="max-w-4xl mx-auto bg-gray-900 p-6 rounded-xl shadow-lg">
-                <h1 className="text-3xl font-bold text-green-500 mb-4">
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="max-w-4xl mx-auto bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-800"
+            >
+                <h1 className="text-3xl font-bold text-green-500 mb-4 text-center">
                     {getText(test, "title")}
                 </h1>
-                <p className="mb-6 text-gray-300">{getText(test, "description")}</p>
+                <p className="mb-6 text-gray-300 text-center">{getText(test, "description")}</p>
 
                 {!submitted ? (
-                    <div className="space-y-6">
-                        {test.questions.map((q) => (
-                            <div key={q.id} className="bg-gray-800 p-4 rounded-lg">
-                                <h3 className="font-semibold mb-3">
+                    <>
+                        {test.questions.map((q, idx) => (
+                            <motion.div
+                                key={q.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="bg-gray-800 p-5 rounded-xl mb-5 border border-gray-700 hover:border-green-600 transition"
+                            >
+                                <h3 className="font-semibold mb-3 text-lg">
                                     {getText(q, "question")}
                                 </h3>
                                 {q.answers.map((a) => {
@@ -156,13 +251,9 @@ export default function TestPage() {
                                         <label
                                             key={a.id}
                                             className={`block mb-2 p-2 rounded transition ${
-                                                submitted
-                                                    ? a.is_correct
-                                                        ? "bg-green-700/30"
-                                                        : selected
-                                                            ? "bg-red-700/30"
-                                                            : ""
-                                                    : ""
+                                                selected
+                                                    ? "bg-green-700/20"
+                                                    : "hover:bg-gray-700/40"
                                             }`}
                                         >
                                             <input
@@ -171,191 +262,147 @@ export default function TestPage() {
                                                 onChange={(e) =>
                                                     handleSelect(q.id, a.id, e.target.checked)
                                                 }
-                                                disabled={submitted}
                                                 className="mr-2 accent-green-500"
                                             />
-                                            {getText(a, "answer")?.trim() || "(варіант без тексту)"}
+                                            {getText(a, "answer")?.trim() || "(empty option)"}
                                         </label>
                                     );
                                 })}
-                            </div>
+                            </motion.div>
                         ))}
 
-                        <button
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
                             onClick={handleSubmit}
-                            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg w-full"
+                            className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg w-full font-semibold transition"
                         >
                             {lang === "ua" ? "Завершити тест" : "Finish test"}
-                        </button>
-                    </div>
+                        </motion.button>
+                    </>
                 ) : (
-                    <div className="text-center mt-8 space-y-6">
-                        <h2 className="text-2xl text-green-400 font-semibold">
-                            {lang === "ua" ? "Результат тесту" : "Your Result"}
+                    <div className="mt-6 space-y-6">
+                        <h2 className="text-2xl text-green-400 font-semibold text-center">
+                            {lang === "ua" ? "Результати тесту" : "Test results"}
                         </h2>
 
-                        <div className="w-full max-w-md mx-auto">
-                            <ResponsiveContainer width="100%" height={320}>
-                                <PieChart margin={{ top: 8, right: 24, bottom: 8, left: 24 }}>
-                                    <Pie
-                                        data={data}
-                                        dataKey="value"
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={70}
-                                        outerRadius={110}
-                                        paddingAngle={2}
-                                        isAnimationActive
+                        {test.questions.map((q, i) => {
+                            const correctAnswer = q.answers.find((a) => a.is_correct);
+                            const userAnswer = q.answers.find((a) =>
+                                (answers[q.id] || []).includes(a.id)
+                            );
+
+                            return (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="bg-gray-800 p-5 rounded-xl border border-gray-700"
+                                >
+                                    <h3 className="font-semibold mb-2 text-white text-lg">
+                                        {getText(q, "question")}
+                                    </h3>
+                                    <p>
+                                        <span className="text-gray-400">
+                                            {lang === "ua" ? "Твоя відповідь: " : "Your answer: "}
+                                        </span>
+                                        <span
+                                            className={
+                                                userAnswer?.is_correct
+                                                    ? "text-green-400"
+                                                    : "text-red-400"
+                                            }
+                                        >
+                                            {getText(userAnswer, "answer") || "—"}
+                                        </span>
+                                    </p>
+                                    <p className="text-gray-300 mb-3">
+                                        <span className="text-gray-400">
+                                            {lang === "ua" ? "Правильна: " : "Correct answer: "}
+                                        </span>
+                                        <span className="text-green-400">
+                                            {getText(correctAnswer, "answer")}
+                                        </span>
+                                    </p>
+
+                                    {/* 🧠 Кнопка пояснення */}
+                                    <button
+                                        onClick={() => handleExplain(q, i)}
+                                        className={`${
+                                            explanations[i]?.visible
+                                                ? "bg-green-700 hover:bg-green-800"
+                                                : "bg-blue-600 hover:bg-blue-700"
+                                        } px-3 py-2 rounded-lg transition flex items-center gap-2`}
                                     >
-                                        {data.map((entry, index) => (
-                                            <Cell
-                                                key={`cell-${index}`}
-                                                fill={COLORS[index]}
-                                                stroke="none"
-                                            />
-                                        ))}
+                                        {explanations[i]?.visible
+                                            ? lang === "ua"
+                                                ? "🔽 Сховати"
+                                                : "🔽 Hide"
+                                            : lang === "ua"
+                                                ? "🧠 Пояснити це питання"
+                                                : "🧠 Explain this question"}
+                                    </button>
 
-                                        <LabelList
-                                            dataKey="value"
-                                            position="inside"
-                                            formatter={(value) => {
-                                                const total = test.questions.length;
-                                                const percent = Math.round((value / total) * 100);
-                                                return `${percent}%`;
-                                            }}
-                                            style={{ fill: "#0b1220", fontWeight: 700 }}
-                                        />
-                                    </Pie>
+                                    <AnimatePresence>
+                                        {explanations[i]?.visible && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.4 }}
+                                                className="mt-3 bg-gray-900 border border-green-600 p-4 rounded-xl shadow-inner"
+                                            >
+                                                <h4 className="text-green-400 font-semibold mb-3">
+                                                    💡{" "}
+                                                    {lang === "ua"
+                                                        ? "Пояснення"
+                                                        : "Explanation"}
+                                                </h4>
 
-                                    <Tooltip
-                                        formatter={(v, n) => [
-                                            v,
-                                            n === (lang === "ua" ? "Правильні" : "Correct")
-                                                ? lang === "ua"
-                                                    ? "Правильні"
-                                                    : "Correct"
-                                                : lang === "ua"
-                                                    ? "Неправильні"
-                                                    : "Incorrect",
-                                        ]}
-                                        contentStyle={{
-                                            background: "#101827",
-                                            border: "1px solid #334155",
-                                            color: "#e5e7eb",
-                                        }}
-                                    />
-                                    <Legend
-                                        verticalAlign="bottom"
-                                        height={36}
-                                        wrapperStyle={{ color: "#e5e7eb" }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
+                                                {(lang === "ua"
+                                                        ? explanations[i].ua
+                                                        : explanations[i].en || explanations[i].ua
+                                                )
+                                                    .split(/\n|(?=✅|❌|👉)/)
+                                                    .filter((p) => p.trim())
+                                                    .map((p, j) => (
+                                                        <p key={j} className="mb-2 text-gray-200">
+                                                            {p.trim()}
+                                                        </p>
+                                                    ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
 
-                            <div className="mt-4 w-full h-4 bg-gray-700 rounded-full overflow-hidden">
-                                <div
-                                    className="h-4 bg-green-500 transition-all duration-700 ease-out"
-                                    style={{
-                                        width: `${Math.round(
-                                            (score / test.questions.length) * 100
-                                        )}%`,
-                                    }}
-                                />
-                            </div>
-
-                            <p className="mt-2 text-lg text-gray-200 font-medium text-center">
-                                {lang === "ua"
-                                    ? `Точність: ${Math.round(
-                                        (score / test.questions.length) * 100
-                                    )}%`
-                                    : `Accuracy: ${Math.round(
-                                        (score / test.questions.length) * 100
-                                    )}%`}
-                            </p>
-                        </div>
-
-                        <p className="text-xl">
+                        {/* 🎓 Отримати сертифікат */}
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={handleCertificate}
+                            className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg w-full font-semibold transition"
+                        >
                             {lang === "ua"
-                                ? `Твій результат: ${score} з ${test.questions.length}`
-                                : `Your score: ${score} out of ${test.questions.length}`}
-                        </p>
+                                ? "🎓 Отримати сертифікат"
+                                : "🎓 Get Certificate"}
+                        </motion.button>
 
-                        <div className="relative bg-white text-gray-800 p-8 rounded-xl mt-6 w-[90%] md:w-[70%] mx-auto shadow-2xl overflow-hidden border border-gray-300">
-                            <div className="relative z-0 text-center">
-                                <h2 className="text-3xl font-bold text-green-600 mb-2">
-                                    CertifyMe
-                                </h2>
-                                <p className="text-gray-600 text-sm mb-8">
-                                    {lang === "ua"
-                                        ? "Офіційне підтвердження проходження тесту"
-                                        : "Official confirmation of test completion"}
-                                </p>
-
-                                <h3 className="text-xl font-semibold mb-2">
-                                    {lang === "ua"
-                                        ? "Цей сертифікат підтверджує, що"
-                                        : "This certifies that"}
-                                </h3>
-                                <p className="text-2xl font-bold text-gray-900 mb-4">
-                                    Student Name
-                                </p>
-
-                                <p className="text-gray-700 mb-6">
-                                    {lang === "ua"
-                                        ? `успішно завершив(ла) тест: "${getText(test, "title")}"`
-                                        : `has successfully completed the test: "${getText(
-                                            test,
-                                            "title"
-                                        )}"`}
-                                </p>
-
-                                <p className="text-gray-600 italic mb-8">
-                                    {lang === "ua"
-                                        ? `Результат: ${score} з ${
-                                            test.questions.length
-                                        } (${Math.round(
-                                            (score / test.questions.length) * 100
-                                        )}%)`
-                                        : `Score: ${score} of ${
-                                            test.questions.length
-                                        } (${Math.round(
-                                            (score / test.questions.length) * 100
-                                        )}%)`}
-                                </p>
-
-                                <div className="flex justify-between items-center mt-10 px-8">
-                                    <div>
-                                        <div className="h-0.5 bg-gray-400 w-32 mx-auto mb-1"></div>
-                                        <p className="text-sm text-gray-600">
-                                            {lang === "ua"
-                                                ? "Підпис викладача"
-                                                : "Instructor Signature"}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-gray-500">
-                                            {lang === "ua" ? "Дата видачі" : "Issued on"}
-                                        </p>
-                                        <p className="font-medium">
-                                            {new Date().toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
                             onClick={() => window.location.reload()}
-                            className="mt-6 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
+                            className="mt-4 bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg w-full font-semibold transition"
                         >
                             {lang === "ua" ? "Пройти ще раз" : "Try again"}
-                        </button>
+                        </motion.button>
                     </div>
                 )}
-            </div>
-            <Toaster position="top-center" />
+            </motion.div>
 
+            <Toaster position="top-center" />
         </section>
     );
 }
