@@ -85,13 +85,15 @@ export default function Header() {
                     </a>
                     <a href="/my-certificates" className="hover:text-white transition flex items-center space-x-1">
                         <FileText size={18} />
-                        <span>Мої сертифікати</span>
+                        <span>{t("nav.certificates")}</span>
                     </a>
+
                     <a href="/achievements" className="hover:text-white transition flex items-center space-x-1">
                         <Trophy size={18} />
                         <span>{t("nav.achievements")}</span>
                     </a>
-                    <a href="/partners" className="hover:text-white transition flex items-center space-x-1">
+                    {/* Аналітика / Партнерство — доступно для всіх користувачів */}
+                    <a href="/analytics" className="hover:text-white transition flex items-center space-x-1">
                         <Briefcase size={18} />
                         <span>{t("nav.partners")}</span>
                     </a>
@@ -147,12 +149,14 @@ export default function Header() {
                         {t("nav.tests")}
                     </a>
                     <a href="/my-certificates" className="hover:text-white transition">
-                        Мої сертифікати
+                        {t("nav.certificates")}
                     </a>
                     <a href="/achievements" className="hover:text-white transition">
                         {t("nav.achievements")}
                     </a>
-                    <a href="/partners" className="hover:text-white transition">
+
+                    {/* Аналітика / Партнерство — доступно для всіх користувачів */}
+                    <a href="/analytics" className="hover:text-white transition">
                         {t("nav.partners")}
                     </a>
 
