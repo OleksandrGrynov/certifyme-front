@@ -7,6 +7,10 @@ export default function AdminCertificatesPage() {
     const [loading, setLoading] = useState(false);
     const [filtered, setFiltered] = useState([]);
 
+    // Helper getters: prefer joined user object -> legacy fields -> fallback
+    const getUserName = (c) => c?.user?.name || c?.user_name || (c?.user_id ? `#${c.user_id}` : "-");
+    const getUserEmail = (c) => c?.user?.email || c?.user_email || "-";
+
     // 🔹 Завантаження сертифікатів
     const loadCertificates = async () => {
         setLoading(true);
@@ -37,12 +41,12 @@ export default function AdminCertificatesPage() {
     useEffect(() => {
         const s = search.toLowerCase();
         setFiltered(
-            certificates.filter(
-                (c) =>
-                    c.user_name?.toLowerCase().includes(s) ||
-                    c.user_email?.toLowerCase().includes(s) ||
-                    c.test_title?.toLowerCase().includes(s)
-            )
+            certificates.filter((c) => {
+                const name = (getUserName(c) || "").toString().toLowerCase();
+                const email = (getUserEmail(c) || "").toString().toLowerCase();
+                const title = (c.test_title || "").toString().toLowerCase();
+                return name.includes(s) || email.includes(s) || title.includes(s);
+            })
         );
     }, [search, certificates]);
 
@@ -135,8 +139,8 @@ export default function AdminCertificatesPage() {
                                 className="border-b border-gray-800 hover:bg-gray-800/40 transition"
                             >
                                 <td className="p-3 text-gray-400">{c.id}</td>
-                                <td className="p-3 text-gray-300">{c.user_name}</td>
-                                <td className="p-3 text-gray-400">{c.user_email || "-"}</td>
+                                <td className="p-3 text-gray-300">{getUserName(c)}</td>
+                                <td className="p-3 text-gray-400">{getUserEmail(c)}</td>
                                 <td className="p-3 text-gray-200 font-medium">
                                     {c.test_title}
                                 </td>
