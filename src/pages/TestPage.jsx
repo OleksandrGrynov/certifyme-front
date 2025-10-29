@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import {jwtDecode} from "jwt-decode";
+
 export default function TestPage() {
     const { id } = useParams();
     const { i18n } = useTranslation();
@@ -14,6 +15,10 @@ export default function TestPage() {
     const [submitted, setSubmitted] = useState(false);
     const [score, setScore] = useState(0);
     const [explanations, setExplanations] = useState({});
+
+    const secondsPerQuestion = 120; // 2 minutes per question
+    const [secondsLeft, setSecondsLeft] = useState(null);
+    const timerRef = useRef(null);
 
     // 📦 Завантаження кешу
     useEffect(() => {
@@ -35,13 +40,7 @@ export default function TestPage() {
             .catch((err) => console.error("❌ Помилка завантаження тесту:", err));
     }, [id]);
 
-    if (!test)
-        return (
-            <div className="text-center text-white mt-10">
-                {lang === "ua" ? "Завантаження..." : "Loading..."}
-            </div>
-        );
-
+    // helper to get localized text
     const getText = (item, field) =>
         item?.[`${field}_${lang}`] || item?.[`${field}_ua`] || "";
 
@@ -117,7 +116,6 @@ export default function TestPage() {
             console.error("❌ Achievement unlock failed:", err);
         }
     };
-
 
     // ✅ Обробка результату
     const handleSubmit = async () => {
@@ -219,6 +217,76 @@ export default function TestPage() {
         }
     };
 
+    // Start countdown when test is loaded; auto-submit when timer hits zero
+    useEffect(() => {
+        if (!test) {
+            setSecondsLeft(null);
+            return;
+        }
+
+        // initialize secondsLeft based on number of questions
+        const total = (test.questions?.length || 0) * secondsPerQuestion;
+        setSecondsLeft(total);
+
+        // clear any previous timer
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+
+        timerRef.current = setInterval(() => {
+            setSecondsLeft((s) => {
+                if (s === null) return null;
+                if (s <= 1) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                    // auto-submit if not already submitted
+                    if (!submitted) {
+                        toast.error(lang === "ua" ? "Час вичерпано — тест автоматично завершено" : "Time is up — test auto-submitted");
+                        handleSubmit();
+                    }
+                    return 0;
+                }
+                return s - 1;
+            });
+        }, 1000);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [test, submitted]);
+
+    // stop timer when user submits manually (defensive)
+    useEffect(() => {
+        if (submitted && timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    }, [submitted]);
+
+    const formatTime = (totalSeconds) => {
+        if (totalSeconds === null) return "--:--";
+        const m = Math.floor(totalSeconds / 60)
+            .toString()
+            .padStart(2, "0");
+        const s = Math.floor(totalSeconds % 60)
+            .toString()
+            .padStart(2, "0");
+        return `${m}:${s}`;
+    };
+
+    // --- now render (all hooks have been called above)
+    if (!test)
+        return (
+            <div className="text-center text-white mt-10">
+                {lang === "ua" ? "Завантаження..." : "Loading..."}
+            </div>
+        );
+
     return (
         <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
             <motion.div
@@ -230,6 +298,18 @@ export default function TestPage() {
                 <h1 className="text-3xl font-bold text-green-500 mb-4 text-center">
                     {getText(test, "title")}
                 </h1>
+
+                {/* Timer badge */}
+                <div className="flex items-center justify-center mb-4 gap-3">
+                    <div className="px-3 py-1 bg-gray-800 text-sm rounded-md border border-gray-700">
+                        {lang === "ua" ? "Час на питання:" : "Per-question"}
+                        {" "}2 {lang === "ua" ? "хв" : "min"}
+                    </div>
+                    <div className="px-3 py-1 bg-red-700 text-sm rounded-md font-mono">
+                        {formatTime(secondsLeft)}
+                    </div>
+                </div>
+
                 <p className="mb-6 text-gray-300 text-center">{getText(test, "description")}</p>
 
                 {!submitted ? (
@@ -287,8 +367,9 @@ export default function TestPage() {
                         </h2>
 
                         {test.questions.map((q, i) => {
-                            const correctAnswer = q.answers.find((a) => a.is_correct);
-                            const userAnswer = q.answers.find((a) =>
+                            // get all correct answers and all user-selected answers
+                            const correctAnswers = q.answers.filter((a) => a.is_correct);
+                            const userAnswers = q.answers.filter((a) =>
                                 (answers[q.id] || []).includes(a.id)
                             );
 
@@ -303,26 +384,41 @@ export default function TestPage() {
                                     <h3 className="font-semibold mb-2 text-white text-lg">
                                         {getText(q, "question")}
                                     </h3>
+
                                     <p>
                                         <span className="text-gray-400">
-                                            {lang === "ua" ? "Твоя відповідь: " : "Your answer: "}
+                                            {lang === "ua" ? "Твої відповіді: " : "Your answers: "}
                                         </span>
-                                        <span
-                                            className={
-                                                userAnswer?.is_correct
-                                                    ? "text-green-400"
-                                                    : "text-red-400"
-                                            }
-                                        >
-                                            {getText(userAnswer, "answer") || "—"}
+                                        <span>
+                                            {userAnswers.length ? (
+                                                userAnswers.map((ua, idx) => (
+                                                    <span
+                                                        key={ua.id}
+                                                        className={
+                                                            ua.is_correct ? "text-green-400" : "text-red-400"
+                                                        }
+                                                    >
+                                                        {getText(ua, "answer") || "—"}
+                                                        {idx < userAnswers.length - 1 ? ", " : ""}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-gray-300">—</span>
+                                            )}
                                         </span>
                                     </p>
+
                                     <p className="text-gray-300 mb-3">
                                         <span className="text-gray-400">
-                                            {lang === "ua" ? "Правильна: " : "Correct answer: "}
+                                            {lang === "ua" ? "Правильні відповіді: " : "Correct answers: "}
                                         </span>
                                         <span className="text-green-400">
-                                            {getText(correctAnswer, "answer")}
+                                            {correctAnswers.map((ca, idx) => (
+                                                <span key={ca.id}>
+                                                    {getText(ca, "answer")}
+                                                    {idx < correctAnswers.length - 1 ? ", " : ""}
+                                                </span>
+                                            ))}
                                         </span>
                                     </p>
 
