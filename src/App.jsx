@@ -7,6 +7,7 @@ import AdminPage from "./pages/AdminPage";
 import AdminTestsPage from "./pages/AdminTestsPage";
 import TestPage from "./pages/TestPage";
 import AchievementsPage from "./pages/AchievementsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import EmailVerifyPage from "./pages/EmailVerifyPage";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -14,6 +15,7 @@ import ResetPassword from "./pages/ResetPassword";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import MyCertificates from "./pages/MyCertificates";
 import AdminEditTestPage from "./pages/AdminEditTestPage";
+import TestDetailsPage from "./pages/TestDetailsPage"; // new
 
 
 function App() {
@@ -24,9 +26,19 @@ function App() {
                     <Route index element={<HomePage />} />
                     <Route path="tests" element={<TestsPage />} />
                     <Route path="tests/:id" element={<TestPage />} />
+                    <Route path="tests/:id/details" element={<TestDetailsPage />} /> {/* add this */}
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="/verify/:cert_id" element={<VerifyCertificate />} />
                     <Route path="achievements" element={<AchievementsPage />} />
+                    <Route
+                        path="analytics"
+                        element={
+                            <ProtectedRoute>
+                                <AnalyticsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+
                     <Route path="verify/:token" element={<EmailVerifyPage />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -66,3 +78,6 @@ function App() {
 }
 
 export default App;
+
+// add a named export alongside default to avoid import mismatches
+export { App };
