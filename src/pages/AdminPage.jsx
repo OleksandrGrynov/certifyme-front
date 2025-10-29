@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import AdminAchievementsPage from "./AdminAchievementsPage";
 import AdminCertificatesPage from "./AdminCertificatesPage";
 import AdminAnalyticsPage from "./AdminAnalyticsPage.jsx";
@@ -22,7 +22,7 @@ import AdminContactsPage from "./AdminContactsPage.jsx";
 
 
 export default function AdminPage() {
-    const { i18n } = useTranslation();
+    useTranslation();
     const navigate = useNavigate();
 
     // Дані
@@ -54,7 +54,7 @@ export default function AdminPage() {
             .then((data) => {
                 if (data.success) setUsers(data.users);
             })
-            .catch((err) => console.error("Помилка отримання користувачів:", err));
+            .catch((err) => console.error("Помилка отримання користу��ачів:", err));
 
         // 📚 Отримати тести
         fetch("http://localhost:5000/api/tests")
@@ -67,25 +67,114 @@ export default function AdminPage() {
     const handleDeleteUser = async (id, email) => {
         if (!window.confirm(`Видалити користувача ${email}?`)) return;
         const token = localStorage.getItem("token");
+        if (!token) return alert("❌ Потрібно увійти як адміністратор");
 
+        const base = `http://localhost:5000/api/admin/users/${id}`;
+
+        // Try server-side cascade delete first (preferred)
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
+            const res = await fetch(`${base}?cascade=true`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
             });
-            const data = await res.json();
-            if (data.success) {
-                setUsers((prev) => prev.filter((u) => u.id !== id));
-                alert("✅ Користувача видалено");
-            } else {
-                alert("❌ " + (data.message || "Помилка видалення"));
+
+            // If server supports cascade and succeeded
+            if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                if (data.success || res.status === 204) {
+                    setUsers((prev) => prev.filter((u) => u.id !== id));
+                    return alert("✅ Користувача та всі пов'язані ресурси видалено");
+                }
+            }
+
+            // If server returned 401/403 -> show auth message
+            if (res.status === 401 || res.status === 403) {
+                return alert("❌ Ви не а��торизовані або не маєте прав адміністратора");
+            }
+
+            // If server indicates cascade not supported or returned an error, fallback to client-driven deletion
+            // (attempt to remove related resources explicitly, then delete user)
+            // Note: backend should provide the following endpoints for this fallback to work:
+            // DELETE /api/admin/users/:id/certificates
+            // DELETE /api/admin/users/:id/achievements
+            // DELETE /api/admin/users/:id/attempts
+            // These endpoints must be protected (admin-only) and idempotent.
+            const fallbackSteps = [
+                { url: `${base}/certificates`, label: "сертифікати" },
+                { url: `${base}/achievements`, label: "досягнення" },
+                { url: `${base}/attempts`, label: "спроби тестів" },
+            ];
+
+            for (const step of fallbackSteps) {
+                try {
+                    const r = await fetch(step.url, {
+                        method: "DELETE",
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    // ignore non-2xx but log
+                    if (!r.ok) console.warn(`Failed to delete ${step.label}:`, r.status);
+                } catch (e) {
+                    console.warn("Network error during fallback delete:", e);
+                }
+            }
+
+            // Finally attempt to delete the user itself
+            try {
+                const r2 = await fetch(base, {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                });
+                const d2 = await r2.json().catch(() => ({}));
+                if (r2.ok && (d2.success || r2.status === 204)) {
+                    setUsers((prev) => prev.filter((u) => u.id !== id));
+                    return alert("✅ Користувача та (повторно) пов'язані ресурси видалено (фолбека)");
+                } else {
+                    console.error("Final delete failed:", r2.status, d2);
+                    return alert("❌ Не вдалося видалити користувача. Подивіться логи сервера.");
+                }
+            } catch (e) {
+                console.error("Final delete network error:", e);
+                return alert("❌ Помилка мережі при видаленні користувача");
             }
         } catch (err) {
-            console.error(err);
-            alert("❌ Серверна помилка при видаленні");
+            console.error("Delete user error:", err);
+            alert("❌ Помилка при видаленні користувача");
+        }
+    };
+
+    // 🛠️ Змінити роль користувача (user <-> admin)
+    const handleChangeRole = async (id, newRole) => {
+        const name = users.find((u) => u.id === id)?.email || id;
+        if (!window.confirm(`Змінити роль користувача ${name} на "${newRole}"?`)) return;
+        const token = localStorage.getItem("token");
+        if (!token) return alert("❌ Потрібно увійти як адміністратор");
+
+        try {
+            // Використовуємо PUT на той же endpoint; бекенд має приймати оновлення ролі
+            const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ role: newRole }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && (data.success || data.user)) {
+                // Оновлюємо локальний стан
+                setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
+                alert("✅ Роль оновлено");
+            } else {
+                console.error("Role update failed:", res.status, data);
+                alert("❌ Не вдалося оновити роль: " + (data.message || res.status));
+            }
+        } catch (err) {
+            console.error("Network error updating role:", err);
+            alert("❌ Помилка мережі при оновленні ролі");
         }
     };
 
@@ -176,12 +265,8 @@ export default function AdminPage() {
                 {/* Контент вкладки */}
                 <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 min-h-[400px]">
                     <AnimatePresence mode="wait">
-                        <motion.div
+                        <div
                             key={activeTab}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.3 }}
                         >
                             {activeTab === "contacts" &&
                                 (<AdminContactsPage />)
@@ -218,8 +303,15 @@ export default function AdminPage() {
                                                         }`}
                                                 </td>
                                                 <td className="p-3">{u.email}</td>
-                                                <td className="p-3 text-green-400">
-                                                    {u.role}
+                                                <td className="p-3">
+                                                    <select
+                                                        value={u.role}
+                                                        onChange={(e) => handleChangeRole(u.id, e.target.value)}
+                                                        className="bg-gray-800 text-green-400 p-1 rounded"
+                                                    >
+                                                        <option value="user">user</option>
+                                                        <option value="admin">admin</option>
+                                                    </select>
                                                 </td>
                                                 <td className="p-3">
                                                     {new Date(
@@ -289,7 +381,7 @@ export default function AdminPage() {
                                                         onClick={() => handleEdit(t)}
                                                         className="bg-yellow-500 hover:bg-yellow-600 flex-1 py-1 rounded flex items-center justify-center gap-1"
                                                     >
-                                                        <Edit3 size={16} /> Редагувати
+                                                        <Edit3 size={16} /> Ре��агувати
                                                     </button>
                                                     <button
                                                         onClick={() =>
@@ -393,7 +485,7 @@ export default function AdminPage() {
                             {activeTab === "settings" && (
                                 <AdminSettingsPage/>
                             )}
-                        </motion.div>
+                        </div>
                     </AnimatePresence>
                 </div>
             </div>
