@@ -29,7 +29,7 @@ export default function TestsPage() {
         const load = async () => {
             try {
                 setLoading(true);
-                const testsRes = await fetch("http://localhost:5000/api/tests");
+                const testsRes = await fetch(`http://localhost:5000/api/tests?lang=${i18n.language}`);
                 const testsJson = await testsRes.json();
                 if (!cancelled) setTests(testsJson?.tests || []);
 
@@ -48,7 +48,7 @@ export default function TestsPage() {
 
         load();
         return () => { cancelled = true; };
-    }, [token]);
+    }, [token, i18n.language]);
 
     const filtered = useMemo(() => {
         if (activeTab === "owned") return tests.filter(t => ownedIds.has(t.id));
@@ -169,9 +169,7 @@ export default function TestsPage() {
                                 )}
 
                                 <div className="flex items-start justify-between gap-3 mb-2">
-                                    <h2 className="text-xl font-semibold">
-                                        {i18n.language === "ua" ? test.title_ua : test.title_en}
-                                    </h2>
+                                    <h2 className="text-xl font-semibold">{test.title}</h2>
                                     <span
                                         className={`text-xs px-2 py-1 rounded-md border ${owned
                                             ? "bg-green-900/40 text-green-300 border-green-700"
@@ -182,9 +180,7 @@ export default function TestsPage() {
                                     </span>
                                 </div>
 
-                                <p className="text-gray-400 text-sm mb-4 line-clamp-3">
-                                    {i18n.language === "ua" ? test.description_ua : test.description_en}
-                                </p>
+                                <p className="text-gray-400 text-sm mb-4 line-clamp-3">{test.description}</p>
 
                                 {!owned && (
                                     <div className="text-sm text-gray-300 mb-3">
