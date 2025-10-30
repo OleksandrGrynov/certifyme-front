@@ -195,11 +195,27 @@ export default function TestsPage() {
                                 <div className="flex gap-3 mt-auto">
                                     {owned ? (
                                         <>
-                                            <Link to={`/tests/${test.id}`} className="flex-1">
-                                                <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-md text-sm font-semibold transition">
-                                                    {tLabel("Пройти тест", "Take test")}
-                                                </button>
-                                            </Link>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const res = await fetch(`http://localhost:5000/api/user/tests/check/${test.id}`, {
+                                                            headers: { Authorization: `Bearer ${token}` },
+                                                        });
+                                                        const data = await res.json();
+                                                        if (data.hasAccess) {
+                                                            window.location.href = `/tests/${test.id}`;
+                                                        } else {
+                                                            alert(tLabel("💳 Спочатку оплатіть тест!", "💳 Please purchase the test first!"));
+                                                        }
+                                                    } catch (err) {
+                                                        alert(tLabel("Помилка перевірки доступу", "Access check error"));
+                                                    }
+                                                }}
+                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md text-sm font-semibold transition"
+                                            >
+                                                {tLabel("Пройти тест", "Take test")}
+                                            </button>
+
                                             <Link to={`/tests/${test.id}/details`} className="flex-1">
                                                 <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-md text-sm transition">
                                                     {tLabel("Деталі", "Details")}
