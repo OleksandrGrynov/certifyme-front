@@ -10,16 +10,17 @@ import {
     User
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next"; // 🌍 переклади
 
 export default function AdminContactsPage() {
+    const { t, i18n } = useTranslation();
     const [contacts, setContacts] = useState([]);
     const [filter, setFilter] = useState("");
     const [loading, setLoading] = useState(true);
-    const [newIds, setNewIds] = useState([]); // 💡 для підсвічування нових
-    const prevIdsRef = useRef([]); // 🧠 зберігаємо попередні ID
-    const audioRef = useRef(null); // 🔊 звук
+    const [newIds, setNewIds] = useState([]);
+    const prevIdsRef = useRef([]);
+    const audioRef = useRef(null);
 
-    // Автооновлення
     useEffect(() => {
         fetchContacts();
         const interval = setInterval(fetchContacts, 5000);
@@ -38,7 +39,6 @@ export default function AdminContactsPage() {
                     .map((c) => c.id);
 
                 if (newOnes.length > 0) {
-                    // 🔔 нові заявки → звук + підсвічування
                     playSound();
                     setNewIds(newOnes);
                     setTimeout(() => setNewIds([]), 3000);
@@ -49,7 +49,7 @@ export default function AdminContactsPage() {
                 setLoading(false);
             })
             .catch((err) => {
-                console.error("❌ Помилка отримання контактів:", err);
+                console.error("❌ Error fetching contacts:", err);
                 setLoading(false);
             });
     };
@@ -62,7 +62,7 @@ export default function AdminContactsPage() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Видалити цю заявку?")) return;
+        if (!window.confirm(t("confirmDelete"))) return;
         await fetch(`http://localhost:5000/api/contacts/${id}`, { method: "DELETE" });
         setContacts((prev) => prev.filter((c) => c.id !== id));
     };
@@ -81,7 +81,7 @@ export default function AdminContactsPage() {
                 );
             }
         } catch (err) {
-            console.error("❌ Помилка оновлення статусу:", err);
+            console.error("❌ Error updating status:", err);
         }
     };
 
@@ -102,17 +102,17 @@ export default function AdminContactsPage() {
     };
 
     if (loading)
-        return <p className="text-center text-gray-400">⏳ Завантаження заявок...</p>;
+        return <p className="text-center text-gray-400">⏳ {t("loadingRequests")}</p>;
 
     const getStatusBadge = (status) => {
         const common = "px-2 py-0.5 text-xs rounded-full";
         switch (status) {
             case "new":
-                return <span className={`${common} bg-blue-900/40 text-blue-400`}>🔵 Нова</span>;
+                return <span className={`${common} bg-blue-900/40 text-blue-400`}>🔵 {t("new")}</span>;
             case "in_progress":
-                return <span className={`${common} bg-yellow-900/40 text-yellow-400`}>🟡 У процесі</span>;
+                return <span className={`${common} bg-yellow-900/40 text-yellow-400`}>🟡 {t("inProgress")}</span>;
             case "confirmed":
-                return <span className={`${common} bg-green-900/40 text-green-400`}>🟢 Підтверджена</span>;
+                return <span className={`${common} bg-green-900/40 text-green-400`}>🟢 {t("confirmed")}</span>;
             default:
                 return null;
         }
@@ -124,7 +124,7 @@ export default function AdminContactsPage() {
                 {title} <span className="text-gray-400">({list.length})</span>
             </h3>
             {list.length === 0 ? (
-                <p className="text-gray-500 text-sm italic">Немає заявок</p>
+                <p className="text-gray-500 text-sm italic">{t("noRequests")}</p>
             ) : (
                 <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {list.map((c) => (
@@ -182,7 +182,7 @@ export default function AdminContactsPage() {
 
                             <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-700">
                                 <span className="text-xs text-gray-500">
-                                    {new Date(c.created_at).toLocaleString("uk-UA")}
+                                    {new Date(c.created_at).toLocaleString(i18n.language === "en" ? "en-US" : "uk-UA")}
                                 </span>
 
                                 <div className="flex gap-2">
@@ -191,7 +191,7 @@ export default function AdminContactsPage() {
                                             onClick={() => handleStatusChange(c.id, "in_progress")}
                                             className="bg-yellow-500 hover:bg-yellow-600 text-xs px-2 py-1 rounded text-black flex items-center gap-1"
                                         >
-                                            <Clock size={12} /> У процесі
+                                            <Clock size={12} /> {t("setInProgress")}
                                         </button>
                                     )}
                                     {c.status === "in_progress" && (
@@ -199,14 +199,14 @@ export default function AdminContactsPage() {
                                             onClick={() => handleStatusChange(c.id, "confirmed")}
                                             className="bg-green-500 hover:bg-green-600 text-xs px-2 py-1 rounded text-black flex items-center gap-1"
                                         >
-                                            <Check size={12} /> Підтвердити
+                                            <Check size={12} /> {t("confirm")}
                                         </button>
                                     )}
                                     <button
                                         onClick={() => handleDelete(c.id)}
                                         className="bg-red-600 hover:bg-red-700 text-xs px-2 py-1 rounded flex items-center gap-1"
                                     >
-                                        <Trash size={12} /> Видалити
+                                        <Trash size={12} /> {t("delete")}
                                     </button>
                                 </div>
                             </div>
@@ -219,13 +219,11 @@ export default function AdminContactsPage() {
 
     return (
         <div>
-            {/* 🔊 Аудіо для сповіщень */}
             <audio ref={audioRef} src="/notify.mp3" preload="auto" />
 
-            {/* 🔍 Пошук */}
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-green-400 flex items-center gap-2">
-                    <MessageCircle size={22} /> Заявки користувачів
+                    <MessageCircle size={22} /> {t("userRequests")}
                     <span className="ml-2 bg-green-700/30 text-green-300 text-xs px-2 py-0.5 rounded-full">
                         {contacts.length}
                     </span>
@@ -235,14 +233,14 @@ export default function AdminContactsPage() {
                     type="text"
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    placeholder="Пошук за ім’ям, email, телефоном або Telegram..."
+                    placeholder={t("searchPlaceholder")}
                     className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 w-72 focus:border-green-500 focus:outline-none"
                 />
             </div>
 
-            {renderSection("🆕 Нові", grouped.new, "text-blue-400")}
-            {renderSection("⏳ У процесі", grouped.in_progress, "text-yellow-400")}
-            {renderSection("✅ Підтверджені", grouped.confirmed, "text-green-400")}
+            {renderSection(`🆕 ${t("newRequests")}`, grouped.new, "text-blue-400")}
+            {renderSection(`⏳ ${t("inProgressRequests")}`, grouped.in_progress, "text-yellow-400")}
+            {renderSection(`✅ ${t("confirmedRequests")}`, grouped.confirmed, "text-green-400")}
         </div>
     );
 }
