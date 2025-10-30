@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 
 export default function TestDetailsPage() {
     const { id } = useParams();
     const { i18n } = useTranslation();
+    const navigate = useNavigate();
     const lang = i18n.language === "en" ? "en" : "ua";
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     const [test, setTest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [hasAccess, setHasAccess] = useState(false);
+    const [checkingAccess, setCheckingAccess] = useState(false);
+    const [paying, setPaying] = useState(false);
 
-    // inferred metadata (used when backend does not provide difficulty/tags)
     const [inferred, setInferred] = useState({ difficulty: null, tags: [] });
 
-    // helpers to infer tags / difficulty from text
     const gatherText = (t) => {
         const parts = [];
         if (!t) return "";
@@ -73,7 +76,8 @@ export default function TestDetailsPage() {
     };
 
     const inferDifficultyLocal = (t) => {
-        if (!t || !t.questions || t.questions.length === 0) return { key: "unknown", labelUa: "—", labelEn: "—" };
+        if (!t || !t.questions || t.questions.length === 0)
+            return { key: "unknown", labelUa: "—", labelEn: "—" };
         const qs = t.questions;
         const avgOptions = qs.reduce((s, q) => s + (q.answers?.length || 0), 0) / qs.length;
         const avgCorrect = qs.reduce((s, q) => s + (q.answers?.filter(a => a.is_correct).length || 0), 0) / qs.length;
@@ -87,8 +91,9 @@ export default function TestDetailsPage() {
         return { key: "hard", labelUa: "Важкий", labelEn: "Hard" };
     };
 
-    const secondsPerQuestion = 120; // 2 minutes per question
+    const secondsPerQuestion = 120;
 
+    // Завантажуємо сам тест
     useEffect(() => {
         let mounted = true;
         fetch(`http://localhost:5000/api/tests/${id}`)
@@ -97,13 +102,11 @@ export default function TestDetailsPage() {
                 if (!mounted) return;
                 if (data.success && data.test) {
                     setTest(data.test);
-                    // compute inferred metadata as fallback (only used if backend didn't provide)
                     try {
                         const tags = inferTagsLocal(data.test);
                         const difficulty = inferDifficultyLocal(data.test);
                         setInferred({ difficulty, tags });
                     } catch (e) {
-                        // ignore inference errors
                         console.warn("Inference error", e);
                     }
                 } else {
@@ -118,13 +121,70 @@ export default function TestDetailsPage() {
         return () => (mounted = false);
     }, [id]);
 
+    // Перевіряємо чи куплений тест
+    useEffect(() => {
+        if (!token) return;
+        const checkAccess = async () => {
+            setCheckingAccess(true);
+            try {
+                const res = await fetch(`http://localhost:5000/api/user/tests/check/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                setHasAccess(!!data.hasAccess);
+            } catch {
+                setHasAccess(false);
+            } finally {
+                setCheckingAccess(false);
+            }
+        };
+        checkAccess();
+    }, [id, token]);
+
     const getText = (item, field) =>
         item?.[`${field}_${lang}`] || item?.[`${field}_ua`] || "";
 
-    // prepare values used in UI: prefer backend, otherwise use inferred
+    const handleStartOrBuy = async () => {
+        if (!token) {
+            alert(lang === "ua" ? "Спочатку увійдіть у профіль" : "Please sign in first");
+            return;
+        }
+
+        // якщо користувач уже має доступ — стартуємо тест
+        if (hasAccess) {
+            navigate(`/tests/${id}`);
+            return;
+        }
+
+        // інакше — оплата через Stripe
+        try {
+            setPaying(true);
+            const res = await fetch("http://localhost:5000/api/payments/checkout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ testId: id }),
+            });
+            const data = await res.json();
+            if (data?.url) {
+                window.location.href = data.url;
+            } else {
+                alert(data?.message || (lang === "ua" ? "Помилка створення оплати" : "Payment error"));
+            }
+        } catch (err) {
+            console.error(err);
+            alert(lang === "ua" ? "Помилка мережі" : "Network error");
+        } finally {
+            setPaying(false);
+        }
+    };
+
     const difficultyLabel = (test?.difficulty && test.difficulty !== "")
         ? test.difficulty
         : (inferred.difficulty ? (lang === "ua" ? inferred.difficulty.labelUa : inferred.difficulty.labelEn) : "—");
+
     const tagsToShow = (test?.tags && test.tags.length > 0) ? test.tags : inferred.tags || [];
 
     if (loading)
@@ -154,10 +214,7 @@ export default function TestDetailsPage() {
                 transition={{ duration: 0.4 }}
                 className="max-w-3xl mx-auto bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-lg"
             >
-                <h1 className="text-3xl font-bold text-green-400 mb-2">
-                    {getText(test, "title")}
-                </h1>
-
+                <h1 className="text-3xl font-bold text-green-400 mb-2">{getText(test, "title")}</h1>
                 <p className="text-gray-300 mb-6">{getText(test, "description")}</p>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
@@ -166,7 +223,6 @@ export default function TestDetailsPage() {
                         <div className="text-lg font-semibold">{test.questions?.length || 0}</div>
                     </div>
 
-                    {/* Replaced duration box: show per-question and total minutes based on questions */}
                     <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                         <div className="text-sm text-gray-400">{lang === "ua" ? "Час" : "Time"}</div>
                         <div className="text-lg font-semibold">
@@ -216,7 +272,7 @@ export default function TestDetailsPage() {
                                     {(q.answers || []).map((a, i) => (
                                         <span key={a.id} className="inline-block mr-2">
                                             {i + 1}) {getText(a, "answer")?.slice(0, 60)}
-                                            { (getText(a, "answer") || "").length > 60 ? "…" : "" }
+                                            {(getText(a, "answer") || "").length > 60 ? "…" : ""}
                                         </span>
                                     ))}
                                 </div>
@@ -229,11 +285,21 @@ export default function TestDetailsPage() {
                 </div>
 
                 <div className="flex gap-3">
-                    <Link to={`/tests/${id}`} className="flex-1">
-                        <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-md font-semibold transition">
-                            {lang === "ua" ? "Пройти тест" : "Start test"}
-                        </button>
-                    </Link>
+                    <button
+                        onClick={handleStartOrBuy}
+                        disabled={checkingAccess || paying}
+                        className={`flex-1 py-2 rounded-md font-semibold transition ${
+                            hasAccess
+                                ? "bg-green-600 hover:bg-green-700 text-white"
+                                : "bg-yellow-600 hover:bg-yellow-700 text-white"
+                        }`}
+                    >
+                        {checkingAccess || paying
+                            ? (lang === "ua" ? "Завантаження..." : "Loading...")
+                            : hasAccess
+                                ? (lang === "ua" ? "Пройти тест" : "Start test")
+                                : (lang === "ua" ? "Оплатити тест" : "Buy test")}
+                    </button>
 
                     <Link to="/tests" className="flex-1">
                         <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-md transition">
