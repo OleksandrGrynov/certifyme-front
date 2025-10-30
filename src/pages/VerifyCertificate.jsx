@@ -1,8 +1,10 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function VerifyCertificate() {
+    const { t, i18n } = useTranslation();
     const { cert_id } = useParams();
     const [cert, setCert] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -10,7 +12,6 @@ export default function VerifyCertificate() {
     useEffect(() => {
         const loadCert = async () => {
             try {
-                // ✅ оновлений правильний endpoint
                 const res = await fetch(`http://localhost:5000/api/tests/certificates/${cert_id}`);
                 const data = await res.json();
                 setCert(data);
@@ -24,6 +25,8 @@ export default function VerifyCertificate() {
         loadCert();
     }, [cert_id]);
 
+    const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
+
     // 🌀 Завантаження
     if (loading)
         return (
@@ -33,7 +36,7 @@ export default function VerifyCertificate() {
                     animate={{ opacity: 1 }}
                     transition={{ repeat: Infinity, repeatType: "reverse", duration: 1 }}
                 >
-                    Завантаження...
+                    {tLabel("Завантаження...", "Loading...")}
                 </motion.div>
             </div>
         );
@@ -52,20 +55,25 @@ export default function VerifyCertificate() {
                     transition={{ duration: 0.6 }}
                     className="bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-lg w-full text-center shadow-2xl"
                 >
-                    <h1 className="text-4xl text-red-500 font-bold mb-4">❌ Сертифікат не знайдено</h1>
+                    <h1 className="text-4xl text-red-500 font-bold mb-4">
+                        ❌ {tLabel("Сертифікат не знайдено", "Certificate not found")}
+                    </h1>
                     <p className="text-gray-400 mb-6 text-center">
-                        Можливо, він недійсний або був видалений із системи CertifyMe.
+                        {tLabel(
+                            "Можливо, він недійсний або був видалений із системи CertifyMe.",
+                            "It may be invalid or removed from the CertifyMe system."
+                        )}
                     </p>
                     <a
                         href="/"
                         className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition"
                     >
-                        На головну
+                        {tLabel("На головну", "Go to homepage")}
                     </a>
                 </motion.div>
 
                 <footer className="mt-8 text-gray-500 text-sm">
-                    CertifyMe © 2025 | Верифікація сертифіката
+                    CertifyMe © 2025 | {tLabel("Верифікація сертифіката", "Certificate Verification")}
                 </footer>
             </motion.section>
         );
@@ -83,35 +91,39 @@ export default function VerifyCertificate() {
                 className="bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-lg w-full text-center shadow-2xl"
             >
                 <h1 className={`text-3xl font-bold mb-3 ${color}`}>
-                    {isValid ? "✅ Сертифікат дійсний" : "⚠️ Сертифікат прострочений"}
+                    {isValid
+                        ? tLabel("✅ Сертифікат дійсний", "✅ Certificate is valid")
+                        : tLabel("⚠️ Сертифікат прострочений", "⚠️ Certificate expired")}
                 </h1>
-                <p className="text-gray-400 mb-6">ID сертифіката: {cert.id}</p>
+                <p className="text-gray-400 mb-6">
+                    {tLabel("ID сертифіката", "Certificate ID")}: {cert.id}
+                </p>
 
                 <div className="text-left space-y-3 bg-gray-800/40 rounded-xl p-5 border border-gray-700/60">
                     <p>
-                        <span className="text-gray-400">👤 Власник:</span>{" "}
+                        <span className="text-gray-400">👤 {tLabel("Власник", "Owner")}:</span>{" "}
                         <span className="text-white font-semibold">{cert.name}</span>
                     </p>
                     <p>
-                        <span className="text-gray-400">📘 Курс:</span>{" "}
+                        <span className="text-gray-400">📘 {tLabel("Курс", "Course")}:</span>{" "}
                         <span className="text-green-400 font-medium">{cert.course}</span>
                     </p>
                     <p>
-                        <span className="text-gray-400">📅 Виданий:</span>{" "}
+                        <span className="text-gray-400">📅 {tLabel("Виданий", "Issued on")}:</span>{" "}
                         <span className="text-white">{cert.issued}</span>
                     </p>
                     <p>
-                        <span className="text-gray-400">⏳ Діє до:</span>{" "}
+                        <span className="text-gray-400">⏳ {tLabel("Діє до", "Valid until")}:</span>{" "}
                         <span className="text-white">{cert.expires}</span>
                     </p>
                     <p>
-                        <span className="text-gray-400">🎯 Результат:</span>{" "}
+                        <span className="text-gray-400">🎯 {tLabel("Результат", "Result")}:</span>{" "}
                         <span className="text-white font-medium">{cert.percent}%</span>
                     </p>
                     <p>
-                        <span className="text-gray-400">📄 Статус:</span>{" "}
-                        <span className={`${isValid ? "text-green-400" : "text-red-400"}`}>
-                            {cert.status}
+                        <span className="text-gray-400">📄 {tLabel("Статус", "Status")}:</span>{" "}
+                        <span className={isValid ? "text-green-400" : "text-red-400"}>
+                            {tLabel(cert.status, cert.status)}
                         </span>
                     </p>
                 </div>
@@ -121,13 +133,13 @@ export default function VerifyCertificate() {
                         href="/"
                         className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-semibold transition"
                     >
-                        На головну
+                        {tLabel("На головну", "Go to homepage")}
                     </a>
                 </div>
             </motion.div>
 
             <footer className="mt-10 text-gray-500 text-sm">
-                CertifyMe © 2025 | Верифікація сертифіката
+                CertifyMe © 2025 | {tLabel("Верифікація сертифіката", "Certificate Verification")}
             </footer>
         </section>
     );
