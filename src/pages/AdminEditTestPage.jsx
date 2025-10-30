@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Plus, Save, Trash, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function AdminEditTestPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { i18n } = useTranslation();
+    const lang = i18n.language === "en" ? "en" : "ua";
+
     const [test, setTest] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,11 +17,13 @@ export default function AdminEditTestPage() {
     useEffect(() => {
         const loadTest = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/tests/${id}`);
+                const res = await fetch(`http://localhost:5000/api/tests/${id}?lang=${lang}`);
                 const data = await res.json();
                 if (data.success) {
                     setTest(data.test);
                     setQuestions(data.test.questions || []);
+                } else {
+                    alert(lang === "ua" ? "Не вдалося завантажити тест" : "Failed to load test");
                 }
             } catch (err) {
                 console.error("❌ Помилка завантаження тесту:", err);
@@ -26,7 +32,7 @@ export default function AdminEditTestPage() {
             }
         };
         loadTest();
-    }, [id]);
+    }, [id, lang]);
 
     // 🟩 Додати питання
     const addQuestion = () =>
@@ -34,7 +40,8 @@ export default function AdminEditTestPage() {
 
     // 🟥 Видалити питання
     const removeQuestion = (qi) => {
-        if (!window.confirm("Видалити це питання?")) return;
+        if (!window.confirm(lang === "ua" ? "Видалити це питання?" : "Delete this question?"))
+            return;
         setQuestions(questions.filter((_, i) => i !== qi));
     };
 
@@ -87,21 +94,29 @@ export default function AdminEditTestPage() {
             });
             const data = await res.json();
             if (data.success) {
-                alert("✅ Питання успішно оновлено!");
+                alert(
+                    lang === "ua"
+                        ? "✅ Питання успішно оновлено!"
+                        : "✅ Questions updated successfully!"
+                );
                 navigate("/admin");
             } else {
                 alert("❌ " + (data.message || "Помилка при оновленні"));
             }
         } catch (err) {
             console.error(err);
-            alert("❌ Серверна помилка при збереженні");
+            alert(
+                lang === "ua"
+                    ? "❌ Серверна помилка при збереженні"
+                    : "❌ Server error while saving"
+            );
         }
     };
 
     if (loading)
         return (
             <div className="flex justify-center items-center h-screen text-gray-300">
-                Завантаження тесту...
+                {lang === "ua" ? "Завантаження тесту..." : "Loading test..."}
             </div>
         );
 
@@ -111,22 +126,27 @@ export default function AdminEditTestPage() {
                 {/* Заголовок */}
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-3xl font-bold text-green-500">
-                        ✏️ Редагування тесту
+                        ✏️{" "}
+                        {lang === "ua"
+                            ? "Редагування тесту"
+                            : "Editing test"}
                     </h1>
                     <button
                         onClick={() => navigate("/admin")}
                         className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-sm px-3 py-2 rounded-lg transition"
                     >
-                        <ArrowLeft size={16} /> Назад
+                        <ArrowLeft size={16} /> {lang === "ua" ? "Назад" : "Back"}
                     </button>
                 </div>
 
                 {/* Інфо тесту */}
                 <div className="p-4 bg-gray-800 rounded-xl mb-4 border border-gray-700">
                     <h2 className="text-xl font-semibold text-green-400 mb-2">
-                        {test.title_ua}
+                        {lang === "ua" ? test.title_ua : test.title_en}
                     </h2>
-                    <p className="text-gray-400 text-sm">{test.description_ua}</p>
+                    <p className="text-gray-400 text-sm">
+                        {lang === "ua" ? test.description_ua : test.description_en}
+                    </p>
                 </div>
 
                 {/* Питання */}
@@ -137,19 +157,19 @@ export default function AdminEditTestPage() {
                     >
                         <div className="flex justify-between items-center mb-3">
                             <h3 className="font-semibold text-lg text-green-400">
-                                Питання {qi + 1}
+                                {lang === "ua" ? "Питання" : "Question"} {qi + 1}
                             </h3>
                             <button
                                 onClick={() => removeQuestion(qi)}
                                 className="text-red-500 hover:text-red-700 transition"
-                                title="Видалити питання"
+                                title={lang === "ua" ? "Видалити питання" : "Delete question"}
                             >
                                 <Trash size={18} />
                             </button>
                         </div>
 
-                        {/* Питання поля */}
-                        <div className="space-y-2 mb-3">
+                        {/* Поля питань */}
+                        <div className="grid sm:grid-cols-2 gap-2 mb-3">
                             <input
                                 value={q.question_ua}
                                 onChange={(e) =>
@@ -182,12 +202,7 @@ export default function AdminEditTestPage() {
                                     <input
                                         value={a.answer_ua}
                                         onChange={(e) =>
-                                            handleChangeAnswer(
-                                                qi,
-                                                ai,
-                                                "answer_ua",
-                                                e.target.value
-                                            )
+                                            handleChangeAnswer(qi, ai, "answer_ua", e.target.value)
                                         }
                                         className="flex-1 bg-gray-800 p-2 rounded"
                                         placeholder="Відповідь (укр)"
@@ -195,12 +210,7 @@ export default function AdminEditTestPage() {
                                     <input
                                         value={a.answer_en}
                                         onChange={(e) =>
-                                            handleChangeAnswer(
-                                                qi,
-                                                ai,
-                                                "answer_en",
-                                                e.target.value
-                                            )
+                                            handleChangeAnswer(qi, ai, "answer_en", e.target.value)
                                         }
                                         className="flex-1 bg-gray-800 p-2 rounded"
                                         placeholder="Answer (eng)"
@@ -216,11 +226,18 @@ export default function AdminEditTestPage() {
                                                 : "bg-gray-600 hover:bg-gray-500"
                                         } transition`}
                                     >
-                                        {a.is_correct ? "Правильна" : "Зробити правильною"}
+                                        {a.is_correct
+                                            ? lang === "ua"
+                                                ? "Правильна"
+                                                : "Correct"
+                                            : lang === "ua"
+                                                ? "Зробити правильною"
+                                                : "Mark as correct"}
                                     </button>
                                     <button
                                         onClick={() => removeAnswer(qi, ai)}
                                         className="text-red-400 hover:text-red-600"
+                                        title={lang === "ua" ? "Видалити" : "Delete"}
                                     >
                                         <Trash size={16} />
                                     </button>
@@ -233,7 +250,8 @@ export default function AdminEditTestPage() {
                             onClick={() => addAnswer(qi)}
                             className="mt-3 bg-green-600 hover:bg-green-700 px-3 py-1 rounded-lg flex items-center gap-1 text-sm transition"
                         >
-                            <Plus size={16} /> Додати варіант
+                            <Plus size={16} />{" "}
+                            {lang === "ua" ? "Додати варіант" : "Add answer"}
                         </button>
                     </div>
                 ))}
@@ -244,13 +262,15 @@ export default function AdminEditTestPage() {
                         onClick={addQuestion}
                         className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition"
                     >
-                        <Plus size={18} /> Додати питання
+                        <Plus size={18} />{" "}
+                        {lang === "ua" ? "Додати питання" : "Add question"}
                     </button>
                     <button
                         onClick={handleSave}
                         className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition"
                     >
-                        <Save size={18} /> Зберегти зміни
+                        <Save size={18} />{" "}
+                        {lang === "ua" ? "Зберегти зміни" : "Save changes"}
                     </button>
                 </div>
             </div>
