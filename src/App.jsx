@@ -16,7 +16,7 @@ import VerifyCertificate from "./pages/VerifyCertificate";
 import MyCertificates from "./pages/MyCertificates";
 import AdminEditTestPage from "./pages/AdminEditTestPage";
 import TestDetailsPage from "./pages/TestDetailsPage"; // new
-
+import CheckoutPage from "./pages/CheckoutPage";
 
 function App() {
     return (
@@ -43,6 +43,7 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password/:token" element={<ResetPassword />} />
                     <Route path="my-certificates" element={<MyCertificates />} />
+                    <Route path="/checkout/:id" element={<CheckoutPage />} />
 
 
                     {/* 🧱 Адмін маршрути — тільки через ProtectedRoute */}
@@ -64,7 +65,7 @@ function App() {
                     />
                 </Route>
                 <Route
-                    path="admin/tests/:id"
+                    path="admin/tests/:id/edit"
                     element={
                         <ProtectedRoute requiredRole="admin">
                             <AdminEditTestPage />
