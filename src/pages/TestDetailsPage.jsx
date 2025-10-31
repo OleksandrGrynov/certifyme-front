@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 
@@ -7,6 +7,7 @@ export default function TestDetailsPage() {
     const { id } = useParams();
     const { i18n } = useTranslation();
     const navigate = useNavigate();
+    const location = useLocation();
     const lang = i18n.language === "en" ? "en" : "ua";
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -16,9 +17,11 @@ export default function TestDetailsPage() {
     const [hasAccess, setHasAccess] = useState(false);
     const [checkingAccess, setCheckingAccess] = useState(false);
     const [paying, setPaying] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const [inferred, setInferred] = useState({ difficulty: null, tags: [] });
 
+    // 🧩 Збір тексту для аналізу
     const gatherText = (t) => {
         const parts = [];
         if (!t) return "";
@@ -37,6 +40,7 @@ export default function TestDetailsPage() {
         return parts.join(" ").toLowerCase();
     };
 
+    // 🔎 Локальне визначення тегів
     const inferTagsLocal = (t) => {
         if (!t || !t.questions || t.questions.length === 0) return [];
         const text = gatherText(t);
@@ -75,6 +79,7 @@ export default function TestDetailsPage() {
         return found.slice(0, 5);
     };
 
+    // 📊 Визначення складності
     const inferDifficultyLocal = (t) => {
         if (!t || !t.questions || t.questions.length === 0)
             return { key: "unknown", labelUa: "—", labelEn: "—" };
@@ -93,7 +98,45 @@ export default function TestDetailsPage() {
 
     const secondsPerQuestion = 120;
 
-    // Завантажуємо сам тест
+    // ✅ Якщо повернулись після Stripe (?paid=true)
+    useEffect(() => {
+        const grantAccessAfterPayment = async () => {
+            const params = new URLSearchParams(location.search);
+            const isPaid = params.get("paid") === "true";
+            if (!isPaid) return;
+
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 4000);
+
+            try {
+                const token = localStorage.getItem("token");
+                const lastPaidTestId = localStorage.getItem("lastPaidTestId");
+                if (!token || !lastPaidTestId) return;
+
+                const res = await fetch("http://localhost:5000/api/user/tests/grant", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ testId: lastPaidTestId }),
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.removeItem("lastPaidTestId");
+                    setHasAccess(true);
+                    navigate(`/tests/${id}`, { replace: true });
+                }
+            } catch (err) {
+                console.error("❌ Failed to grant access:", err);
+            }
+        };
+
+        grantAccessAfterPayment();
+    }, [location, id, navigate]);
+
+    // 🧠 Завантаження тесту
     useEffect(() => {
         let mounted = true;
         fetch(`http://localhost:5000/api/tests/${id}`)
@@ -121,7 +164,7 @@ export default function TestDetailsPage() {
         return () => (mounted = false);
     }, [id]);
 
-    // Перевіряємо чи куплений тест
+    // 🔐 Перевірка доступу
     useEffect(() => {
         if (!token) return;
         const checkAccess = async () => {
@@ -144,19 +187,18 @@ export default function TestDetailsPage() {
     const getText = (item, field) =>
         item?.[`${field}_${lang}`] || item?.[`${field}_ua`] || "";
 
+    // 💳 Купівля / старт
     const handleStartOrBuy = async () => {
         if (!token) {
             alert(lang === "ua" ? "Спочатку увійдіть у профіль" : "Please sign in first");
             return;
         }
 
-        // якщо користувач уже має доступ — стартуємо тест
         if (hasAccess) {
             navigate(`/tests/${id}`);
             return;
         }
 
-        // інакше — оплата через Stripe
         try {
             setPaying(true);
             const res = await fetch("http://localhost:5000/api/payments/checkout", {
@@ -169,6 +211,7 @@ export default function TestDetailsPage() {
             });
             const data = await res.json();
             if (data?.url) {
+                localStorage.setItem("lastPaidTestId", id);
                 window.location.href = data.url;
             } else {
                 alert(data?.message || (lang === "ua" ? "Помилка створення оплати" : "Payment error"));
@@ -188,11 +231,7 @@ export default function TestDetailsPage() {
     const tagsToShow = (test?.tags && test.tags.length > 0) ? test.tags : inferred.tags || [];
 
     if (loading)
-        return (
-            <div className="text-center text-white mt-10">
-                {lang === "ua" ? "Завантаження..." : "Loading..."}
-            </div>
-        );
+        return <div className="text-center text-white mt-10">{lang === "ua" ? "Завантаження..." : "Loading..."}</div>;
 
     if (error || !test)
         return (
@@ -208,6 +247,15 @@ export default function TestDetailsPage() {
 
     return (
         <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
+            {/* ✅ Повідомлення про оплату */}
+            {showSuccess && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 font-semibold">
+                    {lang === "ua"
+                        ? "✅ Оплата успішна! Доступ до тесту відкрито."
+                        : "✅ Payment successful! Access granted."}
+                </div>
+            )}
+
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -217,6 +265,7 @@ export default function TestDetailsPage() {
                 <h1 className="text-3xl font-bold text-green-400 mb-2">{getText(test, "title")}</h1>
                 <p className="text-gray-300 mb-6">{getText(test, "description")}</p>
 
+                {/* 📊 Інфо блоки */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                         <div className="text-sm text-gray-400">{lang === "ua" ? "Питань" : "Questions"}</div>
@@ -256,6 +305,7 @@ export default function TestDetailsPage() {
                     </div>
                 </div>
 
+                {/* 🧩 Приблизні питання */}
                 <div className="mb-6">
                     <h3 className="text-xl font-semibold mb-3">
                         {lang === "ua" ? "Приблизний перегляд питань" : "Sample questions"}
@@ -284,6 +334,7 @@ export default function TestDetailsPage() {
                     </div>
                 </div>
 
+                {/* 🎯 Кнопки */}
                 <div className="flex gap-3">
                     <button
                         onClick={handleStartOrBuy}
