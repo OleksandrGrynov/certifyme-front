@@ -2,9 +2,11 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchWithAuth } from "../lib/apiClient";
 import { motion } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
+import AuthModal from "../components/AuthModal";
 
 export default function AnalyticsPage() {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
 
   const [overview, setOverview] = useState(null);
@@ -14,6 +16,30 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [isPublicView, setIsPublicView] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+
+  // 🔹 Перевірка авторизації
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error(
+          tLabel(
+              "Будь ласка, зареєструйтеся, щоб переглянути аналітику 💚",
+              "Please register to view analytics 💚"
+          ),
+          {
+            style: {
+              background: "#111",
+              color: "#fff",
+              border: "1px solid #22c55e",
+            },
+          }
+      );
+      setShowAuth(true);
+    } else {
+      fetchAll();
+    }
+  }, []);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -42,15 +68,16 @@ export default function AnalyticsPage() {
       setRecent(re?.data || re || []);
     } catch (e) {
       console.error("Analytics fetch error", e);
-      setErr(tLabel("Помилка при завантаженні аналітики або доступу.", "Error loading analytics or access denied."));
+      setErr(
+          tLabel(
+              "Помилка при завантаженні аналітики або доступу.",
+              "Error loading analytics or access denied."
+          )
+      );
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchAll();
-  }, []);
 
   const StatCard = ({ title, value, hint }) => (
       <motion.div
@@ -84,9 +111,18 @@ export default function AnalyticsPage() {
         .map((p, i) => `${i * stepX},${svgHeight - (p.count / max) * svgHeight}`)
         .join(" ");
     return (
-        <svg width="100%" viewBox={`0 0 ${w} ${svgHeight}`} preserveAspectRatio="none" className="rounded">
+        <svg
+            width="100%"
+            viewBox={`0 0 ${w} ${svgHeight}`}
+            preserveAspectRatio="none"
+            className="rounded"
+        >
           <polyline fill="none" stroke={color} strokeWidth="2" points={coords} />
-          <polyline fill={`${color}22`} stroke="none" points={`${coords} ${w},${svgHeight} 0,${svgHeight}`} />
+          <polyline
+              fill={`${color}22`}
+              stroke="none"
+              points={`${coords} ${w},${svgHeight} 0,${svgHeight}`}
+          />
         </svg>
     );
   };
@@ -130,6 +166,9 @@ export default function AnalyticsPage() {
 
   return (
       <section className="relative min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-100 overflow-hidden">
+        <Toaster position="top-center" />
+        {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />}
+
         {/* background glow */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-1/3 -left-1/3 w-[600px] h-[600px] bg-green-500/20 blur-[200px] rounded-full animate-pulse"></div>
@@ -147,7 +186,9 @@ export default function AnalyticsPage() {
           </h1>
 
           {err && (
-              <div className="bg-red-900/30 text-red-300 p-3 rounded mb-4 border border-red-700/30">{err}</div>
+              <div className="bg-red-900/30 text-red-300 p-3 rounded mb-4 border border-red-700/30">
+                {err}
+              </div>
           )}
 
           {isPublicView && (
@@ -156,77 +197,82 @@ export default function AnalyticsPage() {
               </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
-            <StatCard title={tLabel("Курси (підписані)", "Courses (enrolled)")} value={stats.enrolledCourses} />
-            <StatCard title={tLabel("Тести пройдено", "Tests completed")} value={stats.testsTaken} />
-            <StatCard title={tLabel("Середній бал", "Average score")} value={stats.avgScore} />
-            <StatCard title={tLabel("Сертифікатів", "Certificates")} value={stats.certificates} />
-            <StatCard title={tLabel("Прохідність", "Pass rate")} value={stats.passRate} />
-            <StatCard title={tLabel("Поточний стрик", "Current streak")} value={stats.streak} />
-            <StatCard title="—" value="—" />
-          </div>
+          {/* якщо користувач неавторизований – нічого далі не вантажимо */}
+          {!localStorage.getItem("token") ? null : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
+                  <StatCard title={tLabel("Курси (підписані)", "Courses (enrolled)")} value={stats.enrolledCourses} />
+                  <StatCard title={tLabel("Тести пройдено", "Tests completed")} value={stats.testsTaken} />
+                  <StatCard title={tLabel("Середній бал", "Average score")} value={stats.avgScore} />
+                  <StatCard title={tLabel("Сертифікатів", "Certificates")} value={stats.certificates} />
+                  <StatCard title={tLabel("Прохідність", "Pass rate")} value={stats.passRate} />
+                  <StatCard title={tLabel("Поточний стрик", "Current streak")} value={stats.streak} />
+                  <StatCard title="—" value="—" />
+                </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
-              <div className="flex justify-between mb-3">
-                <div className="text-lg font-semibold">{tLabel("Активність", "Activity")}</div>
-                <div className="text-sm text-gray-400">{tLabel("ост. 30 днів", "last 30 days")}</div>
-              </div>
-              <LineChart points={daily?.activity ?? []} color="#34d399" />
-            </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
+                    <div className="flex justify-between mb-3">
+                      <div className="text-lg font-semibold">{tLabel("Активність", "Activity")}</div>
+                      <div className="text-sm text-gray-400">{tLabel("ост. 30 днів", "last 30 days")}</div>
+                    </div>
+                    <LineChart points={daily?.activity ?? []} color="#34d399" />
+                  </div>
 
-            <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
-              <div className="flex justify-between mb-3">
-                <div className="text-lg font-semibold">{tLabel("Ваші тести", "Your tests")}</div>
-                <div className="text-sm text-gray-400">{tLabel("ост. 30 днів", "last 30 days")}</div>
-              </div>
-              <LineChart points={daily?.tests ?? []} color="#60a5fa" />
-            </div>
-          </div>
+                  <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
+                    <div className="flex justify-between mb-3">
+                      <div className="text-lg font-semibold">{tLabel("Ваші тести", "Your tests")}</div>
+                      <div className="text-sm text-gray-400">{tLabel("ост. 30 днів", "last 30 days")}</div>
+                    </div>
+                    <LineChart points={daily?.tests ?? []} color="#60a5fa" />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
-            <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
-              <div className="flex justify-between mb-2">
-                <div className="text-lg font-semibold">{tLabel("Топ курсів", "Top courses")}</div>
-                <div className="text-sm text-gray-400">Top 10</div>
-              </div>
-              <BarChart items={topCourses} />
-            </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
+                  <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
+                    <div className="flex justify-between mb-2">
+                      <div className="text-lg font-semibold">{tLabel("Топ курсів", "Top courses")}</div>
+                      <div className="text-sm text-gray-400">Top 10</div>
+                    </div>
+                    <BarChart items={topCourses} />
+                  </div>
 
-            <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
-              <div className="flex justify-between mb-2">
-                <div className="text-lg font-semibold">{tLabel("Останні події", "Recent events")}</div>
-                <div className="text-sm text-gray-400">Login / Test / Cert</div>
-              </div>
-              <div className="max-h-72 overflow-auto text-sm">
-                <table className="w-full">
-                  <thead>
-                  <tr className="text-gray-400 text-left">
-                    <th className="pb-2">{tLabel("Час", "Time")}</th>
-                    <th className="pb-2">{tLabel("Тип", "Type")}</th>
-                    <th className="pb-2">{tLabel("Опис", "Description")}</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {recent.map((r, i) => (
-                      <tr key={i} className="border-t border-gray-800/60">
-                        <td className="py-2 text-xs text-gray-400">{formatDate(r.created_at || r.time)}</td>
-                        <td className="py-2 text-green-400">{r.type}</td>
-                        <td className="py-2 text-gray-300">{r.description}</td>
-                      </tr>
-                  ))}
-                  {recent.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="text-center py-4 text-gray-500">
-                          {tLabel("Немає подій", "No events")}
-                        </td>
-                      </tr>
-                  )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+                  <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
+                    <div className="flex justify-between mb-2">
+                      <div className="text-lg font-semibold">{tLabel("Останні події", "Recent events")}</div>
+                      <div className="text-sm text-gray-400">Login / Test / Cert</div>
+                    </div>
+                    <div className="max-h-72 overflow-auto text-sm">
+                      <table className="w-full">
+                        <thead>
+                        <tr className="text-gray-400 text-left">
+                          <th className="pb-2">{tLabel("Час", "Time")}</th>
+                          <th className="pb-2">{tLabel("Тип", "Type")}</th>
+                          <th className="pb-2">{tLabel("Опис", "Description")}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {recent.map((r, i) => (
+                            <tr key={i} className="border-t border-gray-800/60">
+                              <td className="py-2 text-xs text-gray-400">{formatDate(r.created_at || r.time)}</td>
+                              <td className="py-2 text-green-400">{r.type}</td>
+                              <td className="py-2 text-gray-300">{r.description}</td>
+                            </tr>
+                        ))}
+                        {recent.length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="text-center py-4 text-gray-500">
+                                {tLabel("Немає подій", "No events")}
+                              </td>
+                            </tr>
+                        )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </>
+          )}
         </motion.div>
       </section>
   );
