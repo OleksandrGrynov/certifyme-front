@@ -1,279 +1,433 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Plus, Save, Trash, ArrowLeft } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Save, Trash, Plus, Settings2, X, CheckCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 
 export default function AdminEditTestPage() {
     const { id } = useParams();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const { i18n } = useTranslation();
-    const lang = i18n.language === "en" ? "en" : "ua";
 
-    const [test, setTest] = useState(null);
-    const [questions, setQuestions] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [editingTest, setEditingTest] = useState(null);
+    const [activeTab, setActiveTab] = useState("edit");
+    const [toast, setToast] = useState(false);
+    const [editLang, setEditLang] = useState("ua"); // "ua" або "en"
+    const [usdToUah, setUsdToUah] = useState(42);
 
-    // 🔹 Завантаження тесту
+    // 📦 Завантажити тест
     useEffect(() => {
-        const loadTest = async () => {
+        const load = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/tests/${id}?lang=${lang}`);
+                const res = await fetch(`http://localhost:5000/api/tests/${id}`);
                 const data = await res.json();
                 if (data.success) {
-                    setTest(data.test);
-                    setQuestions(data.test.questions || []);
-                } else {
-                    alert(lang === "ua" ? "Не вдалося завантажити тест" : "Failed to load test");
+                    // конвертуємо центи в нормальну суму
+                    setEditingTest({
+                        ...data.test,
+                        price_amount: (data.test.price_cents || 0) / 100,
+                        currency: data.test.currency || "usd",
+                        questions: data.test.questions || [],
+                    });
                 }
             } catch (err) {
-                console.error("❌ Помилка завантаження тесту:", err);
-            } finally {
-                setLoading(false);
+                console.error("❌ error loading test:", err);
             }
         };
-        loadTest();
-    }, [id, lang]);
+        load();
+    }, [id]);
 
-    // 🟩 Додати питання
-    const addQuestion = () =>
-        setQuestions([...questions, { question_ua: "", question_en: "", answers: [] }]);
+    // 💵 Отримати курс USD → UAH
+    useEffect(() => {
+        const loadRate = async () => {
+            try {
+                const res = await fetch("https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=USD&json");
+                const data = await res.json();
+                const rate = data?.[0]?.rate || 42;
+                setUsdToUah(rate);
+            } catch {
+                setUsdToUah(42);
+            }
+        };
+        loadRate();
+    }, []);
 
-    // 🟥 Видалити питання
-    const removeQuestion = (qi) => {
-        if (!window.confirm(lang === "ua" ? "Видалити це питання?" : "Delete this question?"))
-            return;
-        setQuestions(questions.filter((_, i) => i !== qi));
+    // 🔧 Хелпери
+    const addQuestion = () => {
+        setEditingTest({
+            ...editingTest,
+            questions: [
+                ...(editingTest.questions || []),
+                { question_ua: "", question_en: "", answers: [] },
+            ],
+        });
     };
 
-    // 🟨 Змінити питання
-    const handleChangeQuestion = (qi, field, value) => {
-        const updated = [...questions];
-        updated[qi][field] = value;
-        setQuestions(updated);
-    };
-
-    // 🟢 Додати варіант відповіді
     const addAnswer = (qi) => {
-        const updated = [...questions];
-        updated[qi].answers.push({ answer_ua: "", answer_en: "", is_correct: false });
-        setQuestions(updated);
+        const updated = { ...editingTest };
+        updated.questions[qi].answers.push({
+            answer_ua: "",
+            answer_en: "",
+            is_correct: false,
+        });
+        setEditingTest(updated);
     };
 
-    // 🟠 Змінити текст відповіді
+    const handleChangeQuestion = (qi, field, value) => {
+        const updated = { ...editingTest };
+        updated.questions[qi][field] = value;
+        setEditingTest(updated);
+    };
+
     const handleChangeAnswer = (qi, ai, field, value) => {
-        const updated = [...questions];
-        updated[qi].answers[ai][field] = value;
-        setQuestions(updated);
+        const updated = { ...editingTest };
+        updated.questions[qi].answers[ai][field] = value;
+        setEditingTest(updated);
     };
 
-    // 🟣 Позначити правильну
     const toggleCorrect = (qi, ai) => {
-        const updated = [...questions];
-        updated[qi].answers[ai].is_correct = !updated[qi].answers[ai].is_correct;
-        setQuestions(updated);
+        const updated = { ...editingTest };
+        updated.questions[qi].answers[ai].is_correct =
+            !updated.questions[qi].answers[ai].is_correct;
+        setEditingTest(updated);
     };
 
-    // 🔴 Видалити варіант
+    const removeQuestion = (qi) => {
+        const updated = { ...editingTest };
+        updated.questions = updated.questions.filter((_, i) => i !== qi);
+        setEditingTest(updated);
+    };
+
     const removeAnswer = (qi, ai) => {
-        const updated = [...questions];
-        updated[qi].answers = updated[qi].answers.filter((_, i) => i !== ai);
-        setQuestions(updated);
+        const updated = { ...editingTest };
+        updated.questions[qi].answers = updated.questions[qi].answers.filter(
+            (_, i) => i !== ai
+        );
+        setEditingTest(updated);
     };
 
-    // 💾 Зберегти зміни
+    // 💾 Зберегти
     const handleSave = async () => {
         const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`http://localhost:5000/api/tests/${id}/questions`, {
+            const res = await fetch(`http://localhost:5000/api/tests/${editingTest.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ questions }),
+                body: JSON.stringify({
+                    ...editingTest,
+                    price_amount: editingTest.price_amount,
+                    currency: editingTest.currency,
+                }),
             });
             const data = await res.json();
             if (data.success) {
-                alert(
-                    lang === "ua"
-                        ? "✅ Питання успішно оновлено!"
-                        : "✅ Questions updated successfully!"
-                );
-                navigate("/admin");
-            } else {
-                alert("❌ " + (data.message || "Помилка при оновленні"));
+                setToast(true);
+                setTimeout(() => {
+                    setToast(false);
+                    navigate("/admin");
+                }, 2000);
             }
         } catch (err) {
-            console.error(err);
-            alert(
-                lang === "ua"
-                    ? "❌ Серверна помилка при збереженні"
-                    : "❌ Server error while saving"
-            );
+            console.error("❌ Error saving test:", err);
         }
     };
 
-    if (loading)
-        return (
-            <div className="flex justify-center items-center h-screen text-gray-300">
-                {lang === "ua" ? "Завантаження тесту..." : "Loading test..."}
-            </div>
-        );
+    if (!editingTest)
+        return <div className="text-center text-gray-400 p-10">Loading...</div>;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6 animate-fadeIn">
-            <div className="max-w-5xl mx-auto bg-gray-900/80 backdrop-blur-md rounded-2xl shadow-xl p-6 space-y-6 border border-gray-800">
-                {/* Заголовок */}
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-3xl font-bold text-green-500">
-                        ✏️{" "}
-                        {lang === "ua"
-                            ? "Редагування тесту"
-                            : "Editing test"}
-                    </h1>
+        <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
+            {toast && (
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fadeIn">
+                    <CheckCircle className="inline mr-2" size={18} />
+                    {t("admin.testUpdated") || "✅ Зміни успішно збережено!"}
+                </div>
+            )}
+
+            <div className="max-w-5xl mx-auto bg-gray-900/70 backdrop-blur-lg border border-gray-800 rounded-2xl shadow-2xl p-6 space-y-6">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-green-400 flex items-center gap-2">
+                        <Settings2 /> {t("admin.editTest")}
+                    </h2>
                     <button
                         onClick={() => navigate("/admin")}
-                        className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-sm px-3 py-2 rounded-lg transition"
+                        className="text-gray-400 hover:text-red-400 flex items-center gap-1"
                     >
-                        <ArrowLeft size={16} /> {lang === "ua" ? "Назад" : "Back"}
+                        <X size={18} /> {t("common.close") || "Закрити"}
                     </button>
                 </div>
 
-                {/* Інфо тесту */}
-                <div className="p-4 bg-gray-800 rounded-xl mb-4 border border-gray-700">
-                    <h2 className="text-xl font-semibold text-green-400 mb-2">
-                        {lang === "ua" ? test.title_ua : test.title_en}
-                    </h2>
-                    <p className="text-gray-400 text-sm">
-                        {lang === "ua" ? test.description_ua : test.description_en}
-                    </p>
+                {/* Вкладки */}
+                <div className="flex border-b border-gray-700">
+                    <button
+                        onClick={() => setActiveTab("edit")}
+                        className={`px-4 py-2 ${activeTab === "edit"
+                            ? "text-green-400 border-b-2 border-green-400"
+                            : "text-gray-400"
+                        }`}
+                    >
+                        ✏️ {t("common.edit")}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("preview")}
+                        className={`px-4 py-2 ${activeTab === "preview"
+                            ? "text-green-400 border-b-2 border-green-400"
+                            : "text-gray-400"
+                        }`}
+                    >
+                        👁️ {t("common.preview")}
+                    </button>
                 </div>
 
-                {/* Питання */}
-                {questions.map((q, qi) => (
-                    <div
-                        key={qi}
-                        className="bg-gray-800/80 p-5 rounded-xl border border-gray-700 hover:border-green-500 transition"
-                    >
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="font-semibold text-lg text-green-400">
-                                {lang === "ua" ? "Питання" : "Question"} {qi + 1}
-                            </h3>
-                            <button
-                                onClick={() => removeQuestion(qi)}
-                                className="text-red-500 hover:text-red-700 transition"
-                                title={lang === "ua" ? "Видалити питання" : "Delete question"}
-                            >
-                                <Trash size={18} />
-                            </button>
-                        </div>
-
-                        {/* Поля питань */}
-                        <div className="grid sm:grid-cols-2 gap-2 mb-3">
-                            <input
-                                value={q.question_ua}
-                                onChange={(e) =>
-                                    handleChangeQuestion(qi, "question_ua", e.target.value)
-                                }
-                                className="p-2 w-full bg-gray-700 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-green-500 outline-none"
-                                placeholder="Питання (укр)"
-                            />
-                            <input
-                                value={q.question_en}
-                                onChange={(e) =>
-                                    handleChangeQuestion(qi, "question_en", e.target.value)
-                                }
-                                className="p-2 w-full bg-gray-700 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-green-500 outline-none"
-                                placeholder="Question (eng)"
-                            />
-                        </div>
-
-                        {/* Відповіді */}
-                        {q.answers.map((a, ai) => (
-                            <div
-                                key={ai}
-                                className={`flex flex-col sm:flex-row gap-2 mb-2 p-2 rounded-lg ${
-                                    a.is_correct
-                                        ? "bg-green-900/30 border border-green-600"
-                                        : "bg-gray-700/60"
-                                }`}
-                            >
-                                <div className="flex-1 flex flex-col sm:flex-row gap-2">
-                                    <input
-                                        value={a.answer_ua}
-                                        onChange={(e) =>
-                                            handleChangeAnswer(qi, ai, "answer_ua", e.target.value)
-                                        }
-                                        className="flex-1 bg-gray-800 p-2 rounded"
-                                        placeholder="Відповідь (укр)"
-                                    />
-                                    <input
-                                        value={a.answer_en}
-                                        onChange={(e) =>
-                                            handleChangeAnswer(qi, ai, "answer_en", e.target.value)
-                                        }
-                                        className="flex-1 bg-gray-800 p-2 rounded"
-                                        placeholder="Answer (eng)"
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-2 justify-end sm:w-auto">
+                {/* Контент */}
+                <div className="space-y-4">
+                    {activeTab === "edit" ? (
+                        <>
+                            {/* 🌐 Перемикач мови */}
+                            <div className="relative w-40 mx-auto my-2">
+                                <div className="flex bg-gray-800 rounded-full overflow-hidden border border-gray-700 relative">
+                                    <div
+                                        className={`absolute top-0 bottom-0 w-1/2 bg-green-600 rounded-full transition-all duration-200 ${editLang === "ua" ? "left-0" : "left-1/2"
+                                        }`}
+                                    ></div>
                                     <button
-                                        onClick={() => toggleCorrect(qi, ai)}
-                                        className={`px-2 py-1 text-xs rounded ${
-                                            a.is_correct
-                                                ? "bg-green-600 hover:bg-green-700"
-                                                : "bg-gray-600 hover:bg-gray-500"
-                                        } transition`}
+                                        onClick={() => setEditLang("ua")}
+                                        className={`relative z-10 flex-1 py-2 text-center font-medium transition-colors duration-200 ${editLang === "ua" ? "text-white" : "text-gray-400"
+                                        }`}
                                     >
-                                        {a.is_correct
-                                            ? lang === "ua"
-                                                ? "Правильна"
-                                                : "Correct"
-                                            : lang === "ua"
-                                                ? "Зробити правильною"
-                                                : "Mark as correct"}
+                                        🇺🇦 UA
                                     </button>
                                     <button
-                                        onClick={() => removeAnswer(qi, ai)}
-                                        className="text-red-400 hover:text-red-600"
-                                        title={lang === "ua" ? "Видалити" : "Delete"}
+                                        onClick={() => setEditLang("en")}
+                                        className={`relative z-10 flex-1 py-2 text-center font-medium transition-colors duration-200 ${editLang === "en" ? "text-white" : "text-gray-400"
+                                        }`}
                                     >
-                                        <Trash size={16} />
+                                        🇬🇧 EN
                                     </button>
                                 </div>
                             </div>
-                        ))}
 
-                        {/* Додати варіант */}
-                        <button
-                            onClick={() => addAnswer(qi)}
-                            className="mt-3 bg-green-600 hover:bg-green-700 px-3 py-1 rounded-lg flex items-center gap-1 text-sm transition"
-                        >
-                            <Plus size={16} />{" "}
-                            {lang === "ua" ? "Додати варіант" : "Add answer"}
-                        </button>
-                    </div>
-                ))}
+                            {/* Назва, опис */}
+                            <motion.div
+                                key={editLang}
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="space-y-2"
+                            >
+                                <input
+                                    value={
+                                        editLang === "ua"
+                                            ? editingTest.title_ua || ""
+                                            : editingTest.title_en || editingTest.title_ua || ""
+                                    }
+                                    onChange={(e) =>
+                                        setEditingTest({
+                                            ...editingTest,
+                                            [editLang === "ua" ? "title_ua" : "title_en"]: e.target.value,
+                                        })
+                                    }
+                                    className="w-full bg-gray-800 p-2 rounded text-lg font-semibold focus:ring-2 focus:ring-green-500 outline-none"
+                                    placeholder={editLang === "ua" ? "Назва тесту (укр)" : "Test title (eng)"}
+                                />
 
-                {/* Кнопки управління */}
-                <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
-                    <button
-                        onClick={addQuestion}
-                        className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition"
-                    >
-                        <Plus size={18} />{" "}
-                        {lang === "ua" ? "Додати питання" : "Add question"}
-                    </button>
+                                <textarea
+                                    value={
+                                        editLang === "ua"
+                                            ? editingTest.description_ua || ""
+                                            : editingTest.description_en || editingTest.description_ua || ""
+                                    }
+                                    onChange={(e) =>
+                                        setEditingTest({
+                                            ...editingTest,
+                                            [editLang === "ua" ? "description_ua" : "description_en"]: e.target.value,
+                                        })
+                                    }
+                                    className="w-full bg-gray-800 p-2 rounded resize-none focus:ring-2 focus:ring-green-500 outline-none"
+                                    rows={3}
+                                    placeholder={editLang === "ua" ? "Опис тесту (укр)" : "Test description (eng)"}
+                                />
+                            </motion.div>
+
+                            <input
+                                value={editingTest.image_url || ""}
+                                onChange={(e) =>
+                                    setEditingTest({ ...editingTest, image_url: e.target.value })
+                                }
+                                className="w-full bg-gray-800 p-2 rounded"
+                                placeholder="URL зображення"
+                            />
+
+                            {/* 💵 Ціна */}
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={editingTest.price_amount || ""}
+                                    onChange={(e) =>
+                                        setEditingTest({
+                                            ...editingTest,
+                                            price_amount: parseFloat(e.target.value) || 0,
+                                        })
+                                    }
+                                    className="flex-1 bg-gray-800 p-2 rounded"
+                                />
+                                <select
+                                    value={editingTest.currency}
+                                    onChange={(e) => {
+                                        const newCurrency = e.target.value;
+                                        let newPrice = editingTest.price_amount;
+
+                                        if (editingTest.currency !== newCurrency) {
+                                            if (newCurrency === "uah" && editingTest.currency === "usd") {
+                                                newPrice = (editingTest.price_amount * usdToUah).toFixed(2);
+                                            } else if (newCurrency === "usd" && editingTest.currency === "uah") {
+                                                newPrice = (editingTest.price_amount / usdToUah).toFixed(2);
+                                            }
+                                        }
+
+                                        setEditingTest({
+                                            ...editingTest,
+                                            currency: newCurrency,
+                                            price_amount: parseFloat(newPrice),
+                                        });
+                                    }}
+                                    className="bg-gray-800 text-white p-2 rounded"
+                                >
+                                    <option value="usd">USD</option>
+                                    <option value="uah">UAH</option>
+                                </select>
+                            </div>
+
+                            {/* 🧠 Питання */}
+                            {editingTest.questions?.map((q, qi) => (
+                                <div key={qi} className="bg-gray-800 p-4 rounded border border-gray-700">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="text-green-400 font-semibold">Питання {qi + 1}</h4>
+                                        <button
+                                            onClick={() => removeQuestion(qi)}
+                                            className="text-red-400 hover:text-red-600"
+                                        >
+                                            <Trash size={16} />
+                                        </button>
+                                    </div>
+
+                                    <input
+                                        value={editLang === "ua" ? q.question_ua || "" : q.question_en || ""}
+                                        onChange={(e) =>
+                                            handleChangeQuestion(
+                                                qi,
+                                                editLang === "ua" ? "question_ua" : "question_en",
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full bg-gray-700 p-2 rounded mb-2"
+                                        placeholder={editLang === "ua" ? "Питання (укр)" : "Question (eng)"}
+                                    />
+
+                                    {q.answers?.map((a, ai) => (
+                                        <div
+                                            key={ai}
+                                            className={`flex items-center gap-2 mb-2 ${a.is_correct
+                                                ? "bg-green-900/30"
+                                                : "bg-gray-700"
+                                            } p-2 rounded`}
+                                        >
+                                            <input
+                                                value={editLang === "ua" ? a.answer_ua || "" : a.answer_en || ""}
+                                                onChange={(e) =>
+                                                    handleChangeAnswer(
+                                                        qi,
+                                                        ai,
+                                                        editLang === "ua" ? "answer_ua" : "answer_en",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="flex-1 bg-transparent outline-none"
+                                                placeholder={editLang === "ua" ? "Варіант відповіді" : "Answer option"}
+                                            />
+                                            <input
+                                                type="checkbox"
+                                                checked={a.is_correct}
+                                                onChange={() => toggleCorrect(qi, ai)}
+                                            />
+                                            <button
+                                                onClick={() => removeAnswer(qi, ai)}
+                                                className="text-red-400 hover:text-red-600"
+                                            >
+                                                <Trash size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    <button
+                                        onClick={() => addAnswer(qi)}
+                                        className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded"
+                                    >
+                                        {editLang === "ua" ? "Додати варіант" : "Add option"}
+                                    </button>
+                                </div>
+                            ))}
+
+                            <button
+                                onClick={addQuestion}
+                                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
+                            >
+                                <Plus size={16} />{" "}
+                                {editLang === "ua" ? "Додати питання" : "Add question"}
+                            </button>
+                        </>
+                    ) : (
+                        <div>
+                            <h2 className="text-2xl font-bold text-green-400 mb-2">
+                                {editLang === "ua" ? editingTest.title_ua : editingTest.title_en}
+                            </h2>
+                            <p className="text-gray-400 mb-4">
+                                {editLang === "ua"
+                                    ? editingTest.description_ua
+                                    : editingTest.description_en}
+                            </p>
+                            {editingTest.image_url && (
+                                <img src={editingTest.image_url} className="rounded-lg mb-4" alt="" />
+                            )}
+                            {editingTest.questions?.map((q, i) => (
+                                <div key={i} className="mb-4">
+                                    <h3 className="text-green-300 font-semibold">
+                                        {i + 1}. {editLang === "ua" ? q.question_ua : q.question_en}
+                                    </h3>
+                                    <ul className="mt-2 space-y-1">
+                                        {q.answers?.map((a, j) => (
+                                            <li
+                                                key={j}
+                                                className={`p-2 rounded ${a.is_correct
+                                                    ? "bg-green-800/40"
+                                                    : "bg-gray-700/50"
+                                                }`}
+                                            >
+                                                {editLang === "ua" ? a.answer_ua : a.answer_en}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex justify-end border-t border-gray-700 pt-4">
                     <button
                         onClick={handleSave}
-                        className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition"
+                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center gap-2"
                     >
                         <Save size={18} />{" "}
-                        {lang === "ua" ? "Зберегти зміни" : "Save changes"}
+                        {editLang === "ua" ? "Зберегти зміни" : "Save changes"}
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
     );
 }
