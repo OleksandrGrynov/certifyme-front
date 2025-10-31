@@ -175,6 +175,9 @@
     "delete": "Delete",
     "edit": "Edit",
     "cancel": "Cancel",
-    "save": "💾 Save changes"
+    "save": "💾 Save changes",
+    "preview": "Preview",
+    "close": "Close"
+
   }
 }
