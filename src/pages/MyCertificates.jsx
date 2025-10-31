@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import AuthModal from "../components/AuthModal"; // ⚠️ шляхи перевір — може бути "./AuthModal"
 
 export default function MyCertificates() {
     const { i18n } = useTranslation();
@@ -9,11 +10,20 @@ export default function MyCertificates() {
     const [certs, setCerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState({});
+    const [showAuth, setShowAuth] = useState(false);
+    const [isGuest, setIsGuest] = useState(false);
 
     useEffect(() => {
         const load = async () => {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                setIsGuest(true);
+                setLoading(false);
+                return;
+            }
+
             try {
-                const token = localStorage.getItem("token");
                 const res = await fetch("http://localhost:5000/api/tests/user/certificates", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -28,7 +38,7 @@ export default function MyCertificates() {
         load();
     }, []);
 
-    // 🔹 Перевіряє наявність PDF і генерує при потребі
+    // 🔹 Перевіряє PDF
     const ensureCertificateAvailable = async (certId, timeoutMs = 15000) => {
         const token = localStorage.getItem("token");
         const fileUrl = `http://localhost:5000/certificates/certificate_${certId}.pdf`;
@@ -65,7 +75,8 @@ export default function MyCertificates() {
         try {
             const url = await ensureCertificateAvailable(certId);
             const res = await fetch(url);
-            if (!res.ok) throw new Error(tLabel(`Помилка завантаження (${res.status})`, `Download error (${res.status})`));
+            if (!res.ok)
+                throw new Error(tLabel(`Помилка завантаження (${res.status})`, `Download error (${res.status})`));
 
             const blob = await res.blob();
             const blobUrl = window.URL.createObjectURL(blob);
@@ -94,6 +105,26 @@ export default function MyCertificates() {
             </div>
         );
 
+    // 🧩 Якщо користувач гість
+    if (isGuest)
+        return (
+            <section className="flex flex-col justify-center items-center h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
+                <h1 className="text-3xl font-bold mb-4 text-gray-300">
+                    {tLabel("Увійдіть, щоб переглянути сертифікати 🔒", "Sign in to view your certificates 🔒")}
+                </h1>
+                <button
+                    onClick={() => setShowAuth(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+                >
+                    {tLabel("Зареєструватися", "Sign up")}
+                </button>
+
+                {/* Модалка входу / реєстрації */}
+                {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />}
+            </section>
+        );
+
+    // 🧩 Якщо сертифікатів немає
     if (!certs.length)
         return (
             <section className="flex flex-col justify-center items-center h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
@@ -109,6 +140,7 @@ export default function MyCertificates() {
             </section>
         );
 
+    // 🧾 Сертифікати користувача
     return (
         <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white px-6 py-12">
             <div className="max-w-5xl mx-auto">
@@ -126,9 +158,9 @@ export default function MyCertificates() {
                             className="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg hover:shadow-green-500/10 transition flex flex-col h-full"
                         >
                             <div className="w-full h-28 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 rounded-lg mb-3 flex items-center justify-center">
-                <span className="text-sm text-gray-300 uppercase tracking-wider">
-                  {tLabel("Сертифікат", "Certificate")}
-                </span>
+                                <span className="text-sm text-gray-300 uppercase tracking-wider">
+                                    {tLabel("Сертифікат", "Certificate")}
+                                </span>
                             </div>
 
                             <h2 className="text-xl font-semibold text-green-400 mb-2">
