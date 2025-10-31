@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function TestsPage() {
     const { i18n } = useTranslation();
@@ -12,17 +12,53 @@ export default function TestsPage() {
     const [buyingId, setBuyingId] = useState(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    // ✅ показуємо повідомлення, якщо прийшли зі Stripe (paid=true)
+    // ✅ якщо повернулись після Stripe (?paid=true)
     useEffect(() => {
-        if (location.search.includes("paid=true")) {
+        const grantAccessAfterPayment = async () => {
+            const params = new URLSearchParams(location.search);
+            const isPaid = params.get("paid") === "true";
+            if (!isPaid) return;
+
+            // 🔹 показуємо анімацію
             setShowSuccess(true);
             const timer = setTimeout(() => setShowSuccess(false), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [location]);
 
+            try {
+                const token = localStorage.getItem("token");
+                const lastPaidTestId = localStorage.getItem("lastPaidTestId");
+                if (!token || !lastPaidTestId) return;
+
+                // 🔹 надаємо доступ до тесту
+                const res = await fetch("http://localhost:5000/api/user/tests/grant", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ testId: lastPaidTestId }),
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    console.log("✅ Access granted after payment");
+                    localStorage.removeItem("lastPaidTestId");
+                    // ⏳ невелика пауза, потім оновлення сторінки без ?paid=true
+                    setTimeout(() => navigate("/tests", { replace: true }), 1500);
+                }
+            } catch (err) {
+                console.error("❌ Failed to grant access:", err);
+            }
+
+            return () => clearTimeout(timer);
+        };
+
+        grantAccessAfterPayment();
+    }, [location, navigate]);
+
+    // ✅ Завантаження списку тестів і доступів
     useEffect(() => {
         let cancelled = false;
 
@@ -37,7 +73,7 @@ export default function TestsPage() {
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
                 const ownedJson = ownedRes.ok ? await ownedRes.json() : { testIds: [] };
-                const ids = (ownedJson.testIds || ownedJson.ids || []).map(Number);
+                const ids = (ownedJson.testIds || []).map(Number);
                 if (!cancelled) setOwnedIds(new Set(ids));
             } catch (err) {
                 console.error("❌ Fetch tests error:", err);
@@ -60,16 +96,16 @@ export default function TestsPage() {
 
     const formatCurrency = (cents, currency = "usd") => {
         const amount = (cents || 0) / 100;
-        try {
-            return new Intl.NumberFormat(i18n.language === "ua" ? "uk-UA" : "en-US", {
-                style: "currency",
-                currency: (currency || "usd").toUpperCase(),
-                maximumFractionDigits: 2,
-            }).format(amount);
-        } catch {
-            return `${amount.toFixed(2)} ${(currency || "USD").toUpperCase()}`;
-        }
+        const locale = i18n.language === "ua" ? "uk-UA" : "en-US";
+        const curr = currency.toUpperCase();
+
+        return new Intl.NumberFormat(locale, {
+            style: "currency",
+            currency: curr,
+            maximumFractionDigits: 2,
+        }).format(amount);
     };
+
 
     const handleBuy = async (testId) => {
         if (!token) {
@@ -78,6 +114,7 @@ export default function TestsPage() {
         }
         try {
             setBuyingId(testId);
+
             const res = await fetch("http://localhost:5000/api/payments/checkout", {
                 method: "POST",
                 headers: {
@@ -86,8 +123,11 @@ export default function TestsPage() {
                 },
                 body: JSON.stringify({ testId }),
             });
+
             const data = await res.json();
             if (data?.url) {
+                // 🔹 зберігаємо testId, щоб надати доступ після повернення
+                localStorage.setItem("lastPaidTestId", testId);
                 window.location.href = data.url; // Stripe redirect
             } else {
                 alert(data?.message || tLabel("Помилка ініціалізації оплати", "Payment init error"));
@@ -184,7 +224,9 @@ export default function TestsPage() {
 
                                 {!owned && (
                                     <div className="text-sm text-gray-300 mb-3">
-                                        {formatCurrency(test.price_cents, test.currency)}
+                                        {i18n.language === "ua"
+                                            ? formatCurrency(test.price_uah * 100, "UAH")
+                                            : formatCurrency(test.price_cents, "USD")}
                                     </div>
                                 )}
 
