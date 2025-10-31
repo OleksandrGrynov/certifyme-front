@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getUserAchievements } from "../services/achievementsService";
-import { Trophy, Star, Zap, Award } from "lucide-react";
+import { Trophy, Star, Zap, Award, Lock } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
+import AuthModal from "../components/AuthModal";
 
 export default function AchievementsPage() {
     const [achievements, setAchievements] = useState([]);
@@ -14,12 +15,21 @@ export default function AchievementsPage() {
         creative: true,
     });
     const [audioUnlocked, setAudioUnlocked] = useState(false);
+    const [isGuest, setIsGuest] = useState(false);
+    const [showAuth, setShowAuth] = useState(false);
 
     const { i18n } = useTranslation();
     const lang = i18n.language === "en" ? "en" : "ua";
 
     // 🟢 Завантаження досягнень
     const loadAchievements = async () => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setIsGuest(true);
+            setLoading(false);
+            return;
+        }
+
         try {
             const data = await getUserAchievements();
             setAchievements(data);
@@ -33,8 +43,6 @@ export default function AchievementsPage() {
     // 📦 Ініціалізація
     useEffect(() => {
         loadAchievements();
-
-        // 🔁 Автооновлення після розблокування
         const reload = () => loadAchievements();
         window.addEventListener("achievementUpdated", reload);
         return () => window.removeEventListener("achievementUpdated", reload);
@@ -46,7 +54,6 @@ export default function AchievementsPage() {
             const audio = new Audio("/unlock.mp3");
             audio.volume = 0;
             const playPromise = audio.play();
-
             if (playPromise !== undefined) {
                 playPromise
                     .then(() => {
@@ -55,15 +62,13 @@ export default function AchievementsPage() {
                         console.log("✅ Audio context unlocked");
                         setAudioUnlocked(true);
                     })
-                    .catch(err => console.warn("⚠️ Unlock failed:", err.message));
+                    .catch((err) => console.warn("⚠️ Unlock failed:", err.message));
             }
             window.removeEventListener("pointerdown", unlock);
         };
-
         window.addEventListener("pointerdown", unlock);
         return () => window.removeEventListener("pointerdown", unlock);
     }, []);
-
 
     if (loading) {
         return (
@@ -72,6 +77,42 @@ export default function AchievementsPage() {
             </div>
         );
     }
+
+    // 🧩 Гостьовий режим
+    if (isGuest) {
+        return (
+            <section className="flex flex-col items-center justify-center h-screen text-white bg-gradient-to-br from-black via-gray-900 to-gray-800">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center p-8 bg-gray-900/70 rounded-2xl border border-gray-700 shadow-xl max-w-md"
+                >
+                    <Lock size={60} className="mx-auto mb-4 text-yellow-400" />
+                    <h2 className="text-2xl font-bold mb-2">
+                        {lang === "ua" ? "Досягнення доступні лише користувачам" : "Achievements are available for users only"}
+                    </h2>
+                    <p className="text-gray-400 mb-6">
+                        {lang === "ua"
+                            ? "Створіть акаунт, щоб відслідковувати прогрес, відкривати нагороди та змагатися зі студентами 💪"
+                            : "Create an account to track your progress, unlock rewards, and compete with students 💪"}
+                    </p>
+                    <button
+                        onClick={() => setShowAuth(true)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition"
+                    >
+                        {lang === "ua" ? "Зареєструватися" : "Sign up"}
+                    </button>
+                </motion.div>
+                {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />}
+            </section>
+        );
+    }
+
+    // 📊 Розрахунок загального прогресу
+    const total = achievements.length;
+    const unlocked = achievements.filter((a) => a.achieved).length;
+    const overallProgress = total ? Math.round((unlocked / total) * 100) : 0;
 
     const grouped = {
         personal: achievements.filter((a) => a.category === "personal"),
@@ -125,16 +166,9 @@ export default function AchievementsPage() {
         if (!localStorage.getItem(`unlocked-${achievement.id}`)) {
             const audio = new Audio("/unlock.mp3");
             audio.volume = 0.7;
-
             if (audioUnlocked) {
-                audio
-                    .play()
-                    .then(() => console.log("✅ Sound played"))
-                    .catch((err) => console.warn("⚠️ Audio blocked:", err.message));
-            } else {
-                console.log("⚠️ Audio not yet unlocked by user click");
+                audio.play().catch((err) => console.warn("⚠️ Audio blocked:", err.message));
             }
-
             toast.success(
                 lang === "ua"
                     ? `🏆 Ви розблокували "${achievement.title_ua}"!`
@@ -155,15 +189,32 @@ export default function AchievementsPage() {
         <div className="bg-gradient-to-b from-black via-gray-900 to-gray-800 text-gray-200 min-h-screen pb-40">
             <Toaster position="top-center" />
 
-            <motion.h1
-                className="sticky top-0 z-20 bg-gradient-to-b from-black via-gray-900/95 to-transparent py-6 text-center backdrop-blur-md shadow-md text-3xl font-bold text-green-400"
+            {/* 🌟 Заголовок із прогресом */}
+            <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.6 }}
+                className="text-center py-8 bg-gray-900/80 shadow-lg sticky top-0 z-20 backdrop-blur-md"
             >
-                {lang === "ua" ? "🏆 Мої досягнення" : "🏆 My Achievements"}
-            </motion.h1>
+                <h1 className="text-3xl font-bold text-green-400 mb-2">
+                    {lang === "ua" ? "🏆 Мої досягнення" : "🏆 My Achievements"}
+                </h1>
+                <p className="text-gray-400 text-sm mb-2">
+                    {lang === "ua"
+                        ? `Відкрито ${unlocked} з ${total} (${overallProgress}%)`
+                        : `Unlocked ${unlocked} of ${total} (${overallProgress}%)`}
+                </p>
+                <div className="w-64 mx-auto h-3 bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div
+                        className="h-full bg-green-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${overallProgress}%` }}
+                        transition={{ duration: 1 }}
+                    />
+                </div>
+            </motion.div>
 
+            {/* 🏅 Категорії */}
             <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-10">
                 {Object.keys(grouped).map((category, catIndex) => (
                     <div key={category} className="mb-10">
@@ -198,23 +249,15 @@ export default function AchievementsPage() {
                                         {grouped[category].map((a, index) => (
                                             <motion.div
                                                 key={a.id}
-                                                className={`relative bg-gray-800/70 border rounded-2xl p-5 shadow-lg transition-all duration-300 overflow-hidden ${
-                                                    a.achieved ? "border-green-500" : "border-gray-700"
+                                                className={`relative bg-gray-800/70 border rounded-2xl p-5 shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 ${
+                                                    a.achieved
+                                                        ? "border-green-500 shadow-green-500/20"
+                                                        : "border-gray-700"
                                                 }`}
-                                                initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                                                animate={{
-                                                    opacity: 1,
-                                                    scale: a.achieved ? [1, 1.1, 1] : 1,
-                                                    boxShadow: a.achieved
-                                                        ? [
-                                                            "0 0 0px #22c55e",
-                                                            "0 0 40px #22c55e",
-                                                            "0 0 0px #22c55e",
-                                                        ]
-                                                        : "0 0 0px transparent",
-                                                }}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
                                                 transition={{
-                                                    duration: 0.8,
+                                                    duration: 0.6,
                                                     delay: index * 0.1 + catIndex * 0.2,
                                                 }}
                                                 onAnimationComplete={() => {
@@ -234,20 +277,16 @@ export default function AchievementsPage() {
                                                 </p>
 
                                                 {a.achieved ? (
-                                                    <div className="flex items-center space-x-1 text-green-400 text-sm font-medium">
-                                                        <Trophy size={16} />
-                                                        <span>
-                                                            {lang === "ua" ? "Отримано" : "Unlocked"}
-                                                        </span>
+                                                    <div className="flex items-center text-green-400 text-sm font-medium gap-1">
+                                                        <Trophy size={16} />{" "}
+                                                        {lang === "ua" ? "Отримано" : "Unlocked"}
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center space-x-1 text-gray-500 text-sm font-medium">
-                                                        <Trophy size={16} />
-                                                        <span>
-                                                            {lang === "ua"
-                                                                ? "Ще не отримано"
-                                                                : "Not unlocked yet"}
-                                                        </span>
+                                                    <div className="flex items-center text-gray-500 text-sm font-medium gap-1">
+                                                        <Trophy size={16} />{" "}
+                                                        {lang === "ua"
+                                                            ? "Ще не отримано"
+                                                            : "Not unlocked yet"}
                                                     </div>
                                                 )}
                                             </motion.div>
