@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Trash2, FileCheck2, RefreshCw, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function AdminCertificatesPage() {
     const [certificates, setCertificates] = useState([]);
@@ -10,13 +12,18 @@ export default function AdminCertificatesPage() {
     const { i18n } = useTranslation();
     const lang = i18n.language === "en" ? "en" : "ua";
 
+    // confirm modal state
+    const [confirmState, setConfirmState] = useState({ open: false, title: lang === "ua" ? "Підтвердження" : "Confirm", message: "", confirmText: lang === "ua" ? "Видалити" : "Delete", cancelText: lang === "ua" ? "Скасувати" : "Cancel", resolve: null });
+    const confirmAsync = ({ title, message, confirmText, cancelText }) => new Promise((resolve) => setConfirmState({ open: true, title: title || confirmState.title, message: message || "", confirmText: confirmText || confirmState.confirmText, cancelText: cancelText || confirmState.cancelText, resolve }));
+    const closeConfirm = (result) => { if (confirmState.resolve) confirmState.resolve(result); setConfirmState((s) => ({ ...s, open: false })); };
+
     // 👤 Зручні хелпери
     const getUserName = (c) =>
         c?.user?.name || c?.user_name || (c?.user_id ? `#${c.user_id}` : "-");
     const getUserEmail = (c) => c?.user?.email || c?.user_email || "-";
 
     // 🔹 Завантаження сертифікатів
-    const loadCertificates = async () => {
+    const loadCertificates = useCallback(async () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         try {
@@ -28,19 +35,20 @@ export default function AdminCertificatesPage() {
                 setCertificates(data.certificates || []);
                 setFiltered(data.certificates || []);
             } else {
-                alert("❌ " + (data.message || "Не вдалося отримати сертифікати"));
+                toast.error("❌ " + (data.message || (lang === "ua" ? "Не вдалося отримати сертифікати" : "Failed to fetch certificates")));
             }
         } catch (err) {
             console.error("❌ Error loading certificates:", err);
+            toast.error("❌ " + (lang === "ua" ? "Помилка завантаження" : "Load error"));
         } finally {
             setLoading(false);
         }
-    };
+    }, [lang]);
 
     // 🟢 Ініціалізація
     useEffect(() => {
         loadCertificates();
-    }, [lang]);
+    }, [loadCertificates]);
 
     // 🔍 Пошук
     useEffect(() => {
@@ -58,14 +66,13 @@ export default function AdminCertificatesPage() {
 
     // 🗑️ Видалення
     const handleDelete = async (id) => {
-        if (
-            !window.confirm(
-                lang === "ua"
-                    ? "Видалити цей сертифікат?"
-                    : "Delete this certificate?"
-            )
-        )
-            return;
+        const ok = await confirmAsync({
+            title: lang === "ua" ? "Видалення сертифіката" : "Delete certificate",
+            message: lang === "ua" ? "Видалити цей сертифікат?" : "Delete this certificate?",
+            confirmText: lang === "ua" ? "Видалити" : "Delete",
+            cancelText: lang === "ua" ? "Скасувати" : "Cancel",
+        });
+        if (!ok) return;
 
         const token = localStorage.getItem("token");
         try {
@@ -77,12 +84,13 @@ export default function AdminCertificatesPage() {
             if (data.success) {
                 setCertificates((prev) => prev.filter((c) => c.id !== id));
                 setFiltered((prev) => prev.filter((c) => c.id !== id));
-                alert(lang === "ua" ? "✅ Сертифікат видалено" : "✅ Certificate deleted");
+                toast.success(lang === "ua" ? "✅ Сертифікат видалено" : "✅ Certificate deleted");
             } else {
-                alert("❌ " + (data.message || "Помилка видалення"));
+                toast.error("❌ " + (data.message || (lang === "ua" ? "Помилка видалення" : "Delete error")));
             }
         } catch (err) {
             console.error("❌ Error deleting certificate:", err);
+            toast.error("❌ " + (lang === "ua" ? "Помилка видалення" : "Delete error"));
         }
     };
 
@@ -213,6 +221,16 @@ export default function AdminCertificatesPage() {
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+              open={confirmState.open}
+              title={confirmState.title}
+              message={confirmState.message}
+              confirmText={confirmState.confirmText}
+              cancelText={confirmState.cancelText}
+              onCancel={() => closeConfirm(false)}
+              onConfirm={() => closeConfirm(true)}
+            />
         </div>
     );
 }
