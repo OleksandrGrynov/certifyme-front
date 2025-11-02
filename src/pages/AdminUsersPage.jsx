@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function AdminUsersPage() {
     const { t, i18n } = useTranslation();
     const [users, setUsers] = useState([]);
+
+    // локальний стан модалки підтвердження
+    const [confirmState, setConfirmState] = useState({ open: false, title: t("admin.confirmTitle") || "Підтвердження", message: "", confirmText: t("common.delete") || "Видалити", cancelText: t("common.cancel") || "Скасувати", resolve: null });
+    const confirmAsync = ({ title, message, confirmText, cancelText }) => new Promise((resolve) => setConfirmState({ open: true, title: title || confirmState.title, message: message || "", confirmText: confirmText || confirmState.confirmText, cancelText: cancelText || confirmState.cancelText, resolve }));
+    const closeConfirm = (result) => { if (confirmState.resolve) confirmState.resolve(result); setConfirmState((s) => ({ ...s, open: false })); };
 
     // завантаження користувачів
     useEffect(() => {
@@ -23,7 +30,13 @@ export default function AdminUsersPage() {
 
     // видалення
     const handleDeleteUser = async (id, email) => {
-        if (!window.confirm(`${t("admin.confirmDeleteUser")} ${email}?`)) return;
+        const ok = await confirmAsync({
+            title: t("admin.confirmDeleteUserTitle") || t("admin.confirmTitle") || "Підтвердження",
+            message: `${t("admin.confirmDeleteUser")} ${email}?`,
+            confirmText: t("common.delete") || "Видалити",
+            cancelText: t("common.cancel") || "Скасувати",
+        });
+        if (!ok) return;
         const token = localStorage.getItem("token");
         const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
             method: "DELETE",
@@ -32,9 +45,9 @@ export default function AdminUsersPage() {
         const data = await res.json();
         if (data.success) {
             setUsers((prev) => prev.filter((u) => u.id !== id));
-            alert(t("admin.userDeleted"));
+            toast.success(t("admin.userDeleted"));
         } else {
-            alert("❌ " + data.message);
+            toast.error("❌ " + data.message);
         }
     };
 
@@ -54,7 +67,9 @@ export default function AdminUsersPage() {
             setUsers((prev) =>
                 prev.map((u) => (u.id === id ? { ...u, role: newRole } : u))
             );
-            alert(t("admin.roleUpdated"));
+            toast.success(t("admin.roleUpdated"));
+        } else {
+            toast.error("❌ " + (data.message || t("error_general")));
         }
     };
 
@@ -121,6 +136,16 @@ export default function AdminUsersPage() {
                 ))}
                 </tbody>
             </table>
+
+            <ConfirmModal
+              open={confirmState.open}
+              title={confirmState.title}
+              message={confirmState.message}
+              confirmText={confirmState.confirmText}
+              cancelText={confirmState.cancelText}
+              onCancel={() => closeConfirm(false)}
+              onConfirm={() => closeConfirm(true)}
+            />
         </div>
     );
 }
