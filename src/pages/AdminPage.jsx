@@ -40,45 +40,45 @@ export default function AdminPage() {
     ];
 
     return (
-        <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
-            <div className="max-w-7xl mx-auto bg-gray-900/80 backdrop-blur-lg border border-gray-800 rounded-2xl shadow-2xl p-6 space-y-8">
-                <div className="flex flex-col sm:flex-row justify-between items-center">
-                    <h1 className="text-3xl font-bold text-green-500">⚙️ {t("admin.title")}</h1>
-                </div>
+      <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
+          <div className="max-w-7xl mx-auto bg-gray-900/80 backdrop-blur-lg border border-gray-800 rounded-2xl shadow-2xl p-6 space-y-8">
+              <div className="flex flex-col sm:flex-row justify-between items-center">
+                  <h1 className="text-3xl font-bold text-green-500">⚙️ {t("admin.title")}</h1>
+              </div>
 
-                {/* Вкладки */}
-                <div className="flex flex-wrap gap-3 border-b border-gray-700 pb-3">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                activeTab === tab.id
-                                    ? "bg-green-700/40 text-green-300 border border-green-500 shadow-lg"
-                                    : "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-transparent"
-                            }`}
-                        >
-                            {tab.icon}
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
+              {/* Вкладки */}
+              <div className="flex flex-wrap gap-3 border-b border-gray-700 pb-3">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        activeTab === tab.id
+                          ? "bg-green-700/40 text-green-300 border border-green-500 shadow-lg"
+                          : "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-transparent"
+                      }`}
+                    >
+                        {tab.icon}
+                        {tab.label}
+                    </button>
+                  ))}
+              </div>
 
-                {/* Контент */}
-                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 min-h-[400px]">
-                    <AnimatePresence mode="wait">
-                        <div key={activeTab}>
-                            {activeTab === "contacts" && <AdminContactsPage />}
-                            {activeTab === "users" && <AdminUsersPage />}
-                            {activeTab === "tests" && <AdminTestsPage />}
-                            {activeTab === "achievements" && <AdminAchievementsPage />}
-                            {activeTab === "certificates" && <AdminCertificatesPage />}
-                            {activeTab === "analytics" && <AdminAnalyticsPage />}
-                            {activeTab === "settings" && <AdminSettingsPage />}
-                        </div>
-                    </AnimatePresence>
-                </div>
-            </div>
-        </section>
+              {/* Контент */}
+              <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 min-h-[400px]">
+                  <AnimatePresence mode="wait">
+                      <div key={activeTab}>
+                          {activeTab === "contacts" && <AdminContactsPage />}
+                          {activeTab === "users" && <AdminUsersPage />}
+                          {activeTab === "tests" && <AdminTestsPage />}
+                          {activeTab === "achievements" && <AdminAchievementsPage />}
+                          {activeTab === "certificates" && <AdminCertificatesPage />}
+                          {activeTab === "analytics" && <AdminAnalyticsPage />}
+                          {activeTab === "settings" && <AdminSettingsPage />}
+                      </div>
+                  </AnimatePresence>
+              </div>
+          </div>
+      </section>
     );
 }
