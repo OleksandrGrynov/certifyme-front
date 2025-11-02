@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 
 export default function ContactModal({ isOpen, onClose }) {
     const { t } = useTranslation();
@@ -48,7 +49,7 @@ export default function ContactModal({ isOpen, onClose }) {
         e.preventDefault();
 
         if (errors.phone || !form.agree) {
-            alert(t("form_check_error"));
+            toast.error(t("form_check_error"));
             return;
         }
 
@@ -60,7 +61,7 @@ export default function ContactModal({ isOpen, onClose }) {
             });
 
             if (response.ok) {
-                alert(t("form_success"));
+                toast.success(t("form_success"));
                 setForm({
                     name: "",
                     email: "",
@@ -72,11 +73,11 @@ export default function ContactModal({ isOpen, onClose }) {
             } else {
                 const errorData = await response.json();
                 console.error("Server error:", errorData);
-                alert("⚠️ Помилка при відправці форми. Спробуйте пізніше.");
+                toast.error("⚠️ Помилка при відправці форми. Спробуйте пізніше.");
             }
         } catch (err) {
             console.error("❌ Fetch error:", err);
-            alert("⚠️ Не вдалося зʼєднатися із сервером.");
+            toast.error("⚠️ Не вдалося зʼєднатися із сервером.");
         }
     };
 
