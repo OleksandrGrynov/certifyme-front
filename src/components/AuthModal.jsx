@@ -4,6 +4,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { Mail, Lock, Eye, EyeOff, User, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import OtpVerifyModal from "./OtpVerifyModal";
+import toast from "react-hot-toast";
 
 export default function AuthModal({ isOpen, onClose }) {
     const { t } = useTranslation();
@@ -46,10 +47,10 @@ export default function AuthModal({ isOpen, onClose }) {
                 const data = await res.json();
 
                 if (res.ok) {
-                    alert(data.message);
+                    toast.success(data.message || "✅ Реєстрація успішна");
                     setShowOtpModal(true);
                 } else {
-                    alert(data.message || "Помилка реєстрації");
+                    toast.error(data.message || "❌ Помилка реєстрації");
                 }
             } else {
                 const res = await fetch("http://localhost:5000/api/users/login", {
@@ -64,10 +65,10 @@ export default function AuthModal({ isOpen, onClose }) {
                     localStorage.setItem("isAuthenticated", "true");
                     onClose();
                     window.location.reload();
-                } else alert(data.message || t("error_login"));
+                } else toast.error(data.message || t("error_login"));
             }
         } catch (err) {
-            alert(t("error_connection"));
+            toast.error(t("error_connection"));
         } finally {
             setLoading(false);
         }
@@ -91,9 +92,9 @@ export default function AuthModal({ isOpen, onClose }) {
                     onClose();
                     window.location.reload();
                 }
-            } else alert(t("error_google"));
+            } else toast.error(t("error_google"));
         } catch {
-            alert(t("error_google"));
+            toast.error(t("error_google"));
         }
     };
 
@@ -109,13 +110,13 @@ export default function AuthModal({ isOpen, onClose }) {
             });
             const result = await res.json();
             if (result.success) {
-                alert(t("password_created"));
+                toast.success(t("password_created"));
                 setShowSetPassword(false);
                 onClose();
                 window.location.reload();
-            } else alert(result.message || t("error_general"));
+            } else toast.error(result.message || t("error_general"));
         } catch {
-            alert(t("error_connection"));
+            toast.error(t("error_connection"));
         }
     };
 
@@ -133,8 +134,11 @@ export default function AuthModal({ isOpen, onClose }) {
             });
             const data = await res.json();
             setResetMessage(data.message || "Перевірте пошту 💚");
+            if (res.ok) toast.success(data.message || "📩 Лист надіслано");
+            else toast.error(data.message || "❌ Помилка відправки");
         } catch {
             setResetMessage("❌ Помилка з'єднання з сервером");
+            toast.error("❌ Помилка з'єднання з сервером");
         } finally {
             setSending(false);
         }
@@ -271,7 +275,7 @@ export default function AuthModal({ isOpen, onClose }) {
                         <div className="flex flex-col gap-3">
                             <GoogleLogin
                                 onSuccess={handleGoogleSuccess}
-                                onError={() => alert(t("error_google"))}
+                                onError={() => toast.error(t("error_google"))}
                             />
                         </div>
 
