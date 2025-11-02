@@ -1,4 +1,3 @@
-// Small helper to centralize fetch calls with the Authorization header
 export async function fetchWithAuth(input, init = {}) {
   const token = localStorage.getItem("token");
   const headers = {
@@ -8,7 +7,7 @@ export async function fetchWithAuth(input, init = {}) {
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   return fetch(input, {
-    credentials: "include", // in case backend uses cookies for session
+    credentials: "include",
     ...init,
     headers,
   });
