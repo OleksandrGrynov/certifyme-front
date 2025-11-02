@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Edit3, Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function AdminAchievementsPage() {
     const [achievements, setAchievements] = useState([]);
@@ -21,8 +23,13 @@ export default function AdminAchievementsPage() {
 
     const [form, setForm] = useState(emptyForm);
 
+    // confirm modal state
+    const [confirmState, setConfirmState] = useState({ open: false, title: lang === "ua" ? "Підтвердження" : "Confirm", message: "", confirmText: lang === "ua" ? "Видалити" : "Delete", cancelText: lang === "ua" ? "Скасувати" : "Cancel", resolve: null });
+    const confirmAsync = ({ title, message, confirmText, cancelText }) => new Promise((resolve) => setConfirmState({ open: true, title: title || confirmState.title, message: message || "", confirmText: confirmText || confirmState.confirmText, cancelText: cancelText || confirmState.cancelText, resolve }));
+    const closeConfirm = (result) => { if (confirmState.resolve) confirmState.resolve(result); setConfirmState((s) => ({ ...s, open: false })); };
+
     // 🔹 Завантаження досягнень
-    const loadAchievements = async () => {
+    const loadAchievements = useCallback(async () => {
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:5000/api/achievements?lang=${lang}`, {
@@ -34,11 +41,11 @@ export default function AdminAchievementsPage() {
         } catch (err) {
             console.error("❌ Error loading achievements:", err);
         }
-    };
+    }, [lang]);
 
     useEffect(() => {
         loadAchievements();
-    }, [lang]);
+    }, [loadAchievements]);
 
     // 🟢 Зберегти (створити або оновити)
     const handleSave = async () => {
@@ -69,8 +76,8 @@ export default function AdminAchievementsPage() {
             setShowForm(false);
             setEditing(null);
             setForm(emptyForm);
-            alert("✅ Збережено!");
-        } else alert("❌ " + (data.message || "Помилка збереження"));
+            toast.success("✅ Збережено!");
+        } else toast.error("❌ " + (data.message || "Помилка збереження"));
     };
 
     // 🟡 Почати редагування
@@ -82,7 +89,8 @@ export default function AdminAchievementsPage() {
 
     // 🔴 Видалення
     const handleDelete = async (id) => {
-        if (!window.confirm("Видалити це досягнення?")) return;
+        const ok = await confirmAsync({ title: lang === "ua" ? "Видалення досягнення" : "Delete achievement", message: lang === "ua" ? "Видалити це досягнення?" : "Delete this achievement?", confirmText: lang === "ua" ? "Видалити" : "Delete", cancelText: lang === "ua" ? "Скасувати" : "Cancel" });
+        if (!ok) return;
         const token = localStorage.getItem("token");
         const res = await fetch(`http://localhost:5000/api/achievements/${id}`, {
             method: "DELETE",
@@ -91,7 +99,8 @@ export default function AdminAchievementsPage() {
         const data = await res.json();
         if (data.success) {
             setAchievements((prev) => prev.filter((a) => a.id !== id));
-        } else alert("❌ " + (data.message || "Помилка видалення"));
+            toast.success("✅ Видалено");
+        } else toast.error("❌ " + (data.message || "Помилка видалення"));
     };
 
     return (
@@ -126,7 +135,7 @@ export default function AdminAchievementsPage() {
                         <h3 className="font-bold text-green-300">{a.title}</h3>
                         <p className="text-gray-400 text-sm mb-3">{a.description}</p>
                         <p className="text-xs text-gray-500 mb-2">
-                            {lang === "ua" ? "Категорія" : "Category"}:{" "}
+                            {lang === "ua" ? "Категорія" : "Category"}: {" "}
                             <span className="text-green-400">{a.category}</span>
                         </p>
                         <div className="flex gap-2">
@@ -233,6 +242,16 @@ export default function AdminAchievementsPage() {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                open={confirmState.open}
+                title={confirmState.title}
+                message={confirmState.message}
+                confirmText={confirmState.confirmText}
+                cancelText={confirmState.cancelText}
+                onCancel={() => closeConfirm(false)}
+                onConfirm={() => closeConfirm(true)}
+            />
         </div>
     );
 }
