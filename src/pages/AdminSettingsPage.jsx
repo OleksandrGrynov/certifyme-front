@@ -1,11 +1,26 @@
 import { useState, useEffect } from "react";
-import { Server, Bell, HardDriveDownload, Brain } from "lucide-react";
+import {
+  Server,
+  Bell,
+  HardDriveDownload,
+  Brain,
+  Send,
+  Phone,
+  Loader2,
+  Users,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function AdminSettingsPage() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
+
   const [system, setSystem] = useState(null);
   const [insights, setInsights] = useState([]);
+  const [smsCount, setSmsCount] = useState(0);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
   const [notifications, setNotifications] = useState({
     newUser: true,
     newCert: true,
@@ -13,123 +28,168 @@ export default function AdminSettingsPage() {
     errors: true,
   });
 
+  // 🧠 1. Завантаження системної інформації
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return console.warn("⚠️ Token missing in localStorage");
-
-    const lang = i18n.language;
-    fetch(`http://localhost:5000/api/settings/system?lang=${lang}`, {
+    if (!token) return;
+    fetch("http://localhost:5000/api/settings/system", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("Unauthorized");
-        return r.json();
-      })
+      .then((r) => r.json())
       .then((data) => setSystem(data.info))
-      .catch((err) => {
-        console.error("❌ Error loading system info:", err);
-        setSystem(null);
-      });
-  }, [i18n.language]);
+      .catch((err) => console.error("❌ System info error:", err));
+  }, []);
 
+  // 📊 2. Завантаження аналітики
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return console.warn("⚠️ Token missing in localStorage");
-
-    const lang = i18n.language;
-    fetch(`http://localhost:5000/api/settings/insights?lang=${lang}`, {
+    if (!token) return;
+    fetch("http://localhost:5000/api/settings/insights", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((r) => {
-        if (!r.ok) throw new Error("Unauthorized");
-        return r.json();
-      })
+      .then((r) => r.json())
       .then((data) => setInsights(data.insights || []))
-      .catch((err) => {
-        console.error("❌ Error loading insights:", err);
-        setInsights([]);
+      .catch(() => setInsights([]));
+  }, []);
+
+  // 📱 3. Кількість підписників на SMS
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch("http://localhost:5000/api/sms/count", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setSmsCount(data.count || 0))
+      .catch(() => setSmsCount(0));
+  }, []);
+
+  // 🚀 4. Створення резервної копії
+  const handleBackup = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return toast.error("🔒 Авторизуйтесь як адмін");
+    try {
+      toast.loading("⏳ Створення резервної копії...");
+      const res = await fetch("http://localhost:5000/api/settings/backup", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
-  }, [i18n.language]);
+      const data = await res.json();
+      toast.dismiss();
+      data.success
+        ? toast.success("✅ Резервну копію створено!")
+        : toast.error("⚠️ Помилка створення копії");
+    } catch {
+      toast.dismiss();
+      toast.error("⚠️ Сервер недоступний");
+    }
+  };
+
+  // 💬 5. Надіслати SMS-розсилку
+  const handleSendSMS = async () => {
+    if (!message.trim()) return toast.error("✍️ Введіть текст повідомлення");
+    const token = localStorage.getItem("token");
+    if (!token) return toast.error("🔒 Авторизуйтесь");
+    setSending(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/sms/send-promo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+      data.success
+        ? toast.success("✅ Розсилку успішно надіслано!")
+        : toast.error(data.message || "⚠️ Помилка надсилання");
+    } catch (err) {
+      console.error(err);
+      toast.error("⚠️ Сервер недоступний");
+    } finally {
+      setSending(false);
+      setMessage("");
+    }
+  };
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold text-green-400 flex items-center gap-2">
-        ⚙️ {t("systemManagement")}
-      </h2>
+      <Toaster position="top-center" />
 
-      {}
+      {/* ⚙️ Стан системи */}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
-          <Server size={20} /> {t("systemStatus")}
+          <Server size={20} /> {tLabel("Стан системи", "System Status")}
         </h3>
-
         {system ? (
           <div className="grid sm:grid-cols-2 gap-3 text-gray-300">
-            <p>
-              🌐 {t("apiVersion")}: <span className="text-white">{system.apiVersion || "—"}</span>
-            </p>
-            <p>
-              🗄️ {t("database")}: <span className="text-white">{system.dbStatus || "—"}</span>
-            </p>
-            <p>
-              🚀 {t("uptime")}: <span className="text-white">{system.uptime || "—"}</span>
-            </p>
-            <p>
-              📊 {t("activeQueries")}:{" "}
-              <span className="text-white">{system.activeQueries || 0}</span>
-            </p>
+            <p>🌐 API: <span className="text-white">{system.apiVersion || "—"}</span></p>
+            <p>🗄️ DB: <span className="text-white">{system.dbStatus || "—"}</span></p>
+            <p>🚀 Uptime: <span className="text-white">{system.uptime || "—"}</span></p>
+            <p>📊 Queries: <span className="text-white">{system.activeQueries || 0}</span></p>
           </div>
         ) : (
-          <p className="text-gray-500">⏳ {t("systemLoading")}</p>
+          <p className="text-gray-500">⏳ {tLabel("Завантаження...", "Loading...")}</p>
         )}
       </section>
 
-      {}
+      {/* 💾 Резервні копії */}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
-          <HardDriveDownload size={20} /> {t("backups")}
+          <HardDriveDownload size={20} /> {tLabel("Резервні копії", "Backups")}
         </h3>
-        <button className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg">
-          📦 {t("createBackup")}
+        <button
+          onClick={handleBackup}
+          className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg transition"
+        >
+          📦 {tLabel("Створити копію", "Create Backup")}
         </button>
-        <ul className="mt-4 text-gray-400 space-y-2">
-          <li>
-            27.10.2025 — <span className="text-green-400">{t("success")}</span>
-          </li>
-          <li>
-            25.10.2025 — <span className="text-green-400">{t("success")}</span>
-          </li>
-          <li>
-            21.10.2025 — <span className="text-yellow-400">{t("partial")}</span>
-          </li>
-        </ul>
       </section>
 
-      {}
+      {/* 🔔 Сповіщення */}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
-          <Bell size={20} /> {t("notifications")}
+          <Bell size={20} /> {tLabel("Сповіщення", "Notifications")}
         </h3>
-        <div className="flex flex-col gap-2 text-gray-300">
-          {Object.entries(notifications).map(([key, value]) => (
-            <label key={key} className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={value}
-                onChange={() => setNotifications((p) => ({ ...p, [key]: !p[key] }))}
-                className="accent-green-500"
-              />
-
-              {t(`notif_${key}`)}
-            </label>
-          ))}
-        </div>
+        {Object.entries(notifications).map(([k, v]) => (
+          <label key={k} className="flex items-center gap-3 text-gray-300">
+            <input
+              type="checkbox"
+              checked={v}
+              onChange={() =>
+                setNotifications((p) => ({ ...p, [k]: !p[k] }))
+              }
+              className="accent-green-500"
+            />
+            {{
+              newUser: tLabel("Нові користувачі", "New Users"),
+              newCert: tLabel("Нові сертифікати", "New Certificates"),
+              newReview: tLabel("Нові відгуки", "New Reviews"),
+              errors: tLabel("Помилки системи", "System Errors"),
+            }[k]}
+          </label>
+        ))}
       </section>
 
-      {}
+      {/* 📱 SMS Розсилка */}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
-          <Brain size={20} /> {t("insights")}
+          <Phone size={20} /> {tLabel("SMS Розсилка", "SMS Broadcast")}
+        </h3>
+        <p className="text-gray-400 mb-3 flex items-center gap-2">
+          <Users size={18} className="text-green-400" />{" "}
+          {tLabel("Підписників", "Subscribers")}:{" "}
+          <span className="text-white">{smsCount}</span>
+        </p>
+
+
+      </section>
+
+      {/* 🧠 Аналітичні підказки */}
+      <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
+        <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
+          <Brain size={20} /> {tLabel("Аналітичні підказки", "AI Insights")}
         </h3>
         {insights.length ? (
           <ul className="list-disc list-inside text-gray-300 space-y-1">
@@ -138,7 +198,7 @@ export default function AdminSettingsPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">🤖 {t("analyticsGenerating")}</p>
+          <p className="text-gray-500">🤖 {tLabel("Генерується аналітика...", "Generating analytics...")}</p>
         )}
       </section>
     </div>
