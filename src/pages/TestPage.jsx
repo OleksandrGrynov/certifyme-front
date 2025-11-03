@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
+import tToast from "../lib/tToast";
 
 export default function TestPage() {
   const { id } = useParams();
@@ -15,11 +16,35 @@ export default function TestPage() {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [explanations, setExplanations] = useState({});
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   const secondsPerQuestion = 120;
   const [secondsLeft, setSecondsLeft] = useState(null);
   const timerRef = useRef(null);
 
+  // ✅ 1. Розблокування аудіо після першої взаємодії користувача
+  useEffect(() => {
+    const unlock = () => {
+      const audio = new Audio("/unlock.mp3");
+      audio.volume = 0;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            console.log("✅ Audio context unlocked (TestPage)");
+            setAudioUnlocked(true);
+          })
+          .catch((err) => console.warn("⚠️ Unlock failed:", err.message));
+      }
+      window.removeEventListener("pointerdown", unlock);
+    };
+    window.addEventListener("pointerdown", unlock);
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, []);
+
+  // Завантаження збережених пояснень
   useEffect(() => {
     const saved = localStorage.getItem(`explanations_${id}`);
     if (saved) setExplanations(JSON.parse(saved));
@@ -30,6 +55,7 @@ export default function TestPage() {
       localStorage.setItem(`explanations_${id}`, JSON.stringify(explanations));
   }, [explanations, id]);
 
+  // Завантаження тесту
   useEffect(() => {
     fetch(`http://localhost:5000/api/tests/${id}`)
       .then((r) => r.json())
@@ -37,7 +63,8 @@ export default function TestPage() {
       .catch((err) => console.error("❌ Помилка завантаження тесту:", err));
   }, [id]);
 
-  const getText = (item, field) => item?.[`${field}_${lang}`] || item?.[`${field}_ua`] || "";
+  const getText = (item, field) =>
+    item?.[`${field}_${lang}`] || item?.[`${field}_ua`] || "";
 
   const handleSelect = (qId, aId, checked) => {
     setAnswers((prev) => {
@@ -48,11 +75,18 @@ export default function TestPage() {
     });
   };
 
+  // ✅ 2. Аудіо викликається тільки якщо дозволено
   const playUnlockSound = () => {
+    if (!audioUnlocked) {
+      console.warn("⚠️ Audio context not yet unlocked");
+      return;
+    }
     const audio = new Audio("/unlock.mp3");
     audio.volume = 0.8;
     audio.currentTime = 0;
-    audio.play().catch((err) => console.warn("⚠️ Sound blocked:", err.message));
+    audio
+      .play()
+      .catch((err) => console.warn("⚠️ Sound blocked:", err.message));
   };
 
   const unlockAchievement = async (code) => {
@@ -77,27 +111,22 @@ export default function TestPage() {
       if (data.success && data.achievement) {
         const key = `shown-achievement-${userId}-${data.achievement.id}`;
 
+        // показуємо тільки 1 раз на користувача
         if (!localStorage.getItem(key)) {
           localStorage.setItem(key, "true");
 
-          toast.success(
-            lang === "ua"
-              ? `🏆 Досягнення розблоковано: ${data.achievement.title_ua}`
-              : `🏆 Achievement unlocked: ${data.achievement.title_en}`,
-            {
-              style: {
-                background: "#111",
-                color: "#22c55e",
-                border: "1px solid #22c55e",
-              },
-            },
+          // 🔥 Глобальний виклик події — покаже тост через AchievementListener
+          window.dispatchEvent(
+            new CustomEvent("achievementUnlocked", {
+              detail: [data.achievement],
+            })
           );
 
-          playUnlockSound();
+          // 🔁 оновити список досягнень, якщо сторінка відкрита
           window.dispatchEvent(new Event("achievementUpdated"));
         } else {
           console.log(
-            `🟢 Досягнення "${data.achievement.title_ua}" вже показано для користувача ${userId}`,
+            `🟢 Досягнення "${data.achievement.title_ua}" вже показано для користувача ${userId}`
           );
         }
       }
@@ -106,8 +135,11 @@ export default function TestPage() {
     }
   };
 
+
+  // ✅ 3. handleSubmit тепер також зберігає результат у БД
   const handleSubmit = async () => {
     let correct = 0;
+
     test.questions.forEach((q) => {
       const correctAnswers = q.answers.filter((a) => a.is_correct).map((a) => a.id);
       const selected = answers[q.id] || [];
@@ -116,16 +148,52 @@ export default function TestPage() {
         correctAnswers.every((id) => selected.includes(id));
       if (isRight) correct++;
     });
+
     setScore(correct);
     setSubmitted(true);
 
     try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      // ✅ Збереження результату тесту на бекенді
+      const res = await fetch("http://localhost:5000/api/tests/record", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          testId: test.id,
+          score: correct,
+          total: test.questions.length,
+        }),
+      });
+
+      const data = await res.json();
+
+      // ✅ якщо бекенд повернув нові досягнення → показати їх через глобальний слухач
+      if (data.success && data.newAchievements?.length) {
+        window.dispatchEvent(
+          new CustomEvent("achievementUnlocked", {
+            detail: data.newAchievements,
+          })
+        );
+
+        // 🔄 оновити список на сторінці досягнень (якщо відкрита)
+        window.dispatchEvent(new Event("achievementUpdated"));
+      }
+
+      // 🏆 ручне розблокування окремих (залишаємо для backward compatibility)
       await unlockAchievement("first_certificate");
-      if (correct === test.questions.length) await unlockAchievement("no_mistakes");
+      if (correct === test.questions.length)
+        await unlockAchievement("no_mistakes");
+
     } catch (err) {
       console.error("❌ Помилка при оновленні досягнення:", err);
     }
   };
+
 
   const handleExplain = async (q, i) => {
     if (explanations[i]) {
@@ -136,7 +204,9 @@ export default function TestPage() {
       return;
     }
 
-    const userAnswer = q.answers.find((a) => (answers[q.id] || []).includes(a.id))?.answer_ua;
+    const userAnswer = q.answers.find((a) =>
+      (answers[q.id] || []).includes(a.id)
+    )?.answer_ua;
 
     try {
       const res = await fetch("http://localhost:5000/api/tests/explain-one", {
@@ -159,16 +229,24 @@ export default function TestPage() {
           ...prev,
           [i]: { ua: cleanUa, en: cleanEn, visible: true },
         }));
-      } else toast.error("❌ Не вдалося отримати пояснення");
+      } else
+        tToast.error(
+          "❌ Не вдалося отримати пояснення",
+          "❌ Failed to get explanation"
+        );
     } catch {
-      toast.error("❌ Сервер недоступний");
+      tToast.error("❌ Сервер недоступний", "❌ Server unavailable");
     }
   };
 
   const handleCertificate = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return toast.error("Спочатку увійди у свій акаунт!");
+      if (!token)
+        return tToast.error(
+          "Спочатку увійди у свій акаунт!",
+          "Please sign in first!"
+        );
 
       const res = await fetch("http://localhost:5000/api/tests/certificate", {
         method: "POST",
@@ -192,12 +270,18 @@ export default function TestPage() {
       a.download = `Certificate_${getText(test, "title")}.pdf`;
       a.click();
 
-      toast.success(lang === "ua" ? "🎓 Сертифікат згенеровано!" : "🎓 Certificate generated!");
+      toast.success(
+        lang === "ua" ? "🎓 Сертифікат згенеровано!" : "🎓 Certificate generated!"
+      );
     } catch {
-      toast.error("❌ Не вдалося згенерувати сертифікат");
+      tToast.error(
+        "❌ Не вдалося згенерувати сертифікат",
+        "❌ Failed to generate certificate"
+      );
     }
   };
 
+  // Таймер
   useEffect(() => {
     if (!test) {
       setSecondsLeft(null);
@@ -220,10 +304,10 @@ export default function TestPage() {
           timerRef.current = null;
 
           if (!submitted) {
-            toast.error(
+            tToast.error(
               lang === "ua"
                 ? "Час вичерпано — тест автоматично завершено"
-                : "Time is up — test auto-submitted",
+                : "Time is up — test auto-submitted"
             );
             handleSubmit();
           }
@@ -239,7 +323,7 @@ export default function TestPage() {
         timerRef.current = null;
       }
     };
-  }, [test, submitted]);
+  }, [test, submitted, lang]);
 
   useEffect(() => {
     if (submitted && timerRef.current) {
@@ -278,17 +362,19 @@ export default function TestPage() {
           {getText(test, "title")}
         </h1>
 
-        {}
         <div className="flex items-center justify-center mb-4 gap-3">
           <div className="px-3 py-1 bg-gray-800 text-sm rounded-md border border-gray-700">
-            {lang === "ua" ? "Час на питання:" : "Per-question"} 2 {lang === "ua" ? "хв" : "min"}
+            {lang === "ua" ? "Час на питання:" : "Per-question"} 2{" "}
+            {lang === "ua" ? "хв" : "min"}
           </div>
           <div className="px-3 py-1 bg-red-700 text-sm rounded-md font-mono">
             {formatTime(secondsLeft)}
           </div>
         </div>
 
-        <p className="mb-6 text-gray-300 text-center">{getText(test, "description")}</p>
+        <p className="mb-6 text-gray-300 text-center">
+          {getText(test, "description")}
+        </p>
 
         {!submitted ? (
           <>
@@ -300,7 +386,9 @@ export default function TestPage() {
                 transition={{ delay: idx * 0.05 }}
                 className="bg-gray-800 p-5 rounded-xl mb-5 border border-gray-700 hover:border-green-600 transition"
               >
-                <h3 className="font-semibold mb-3 text-lg">{getText(q, "question")}</h3>
+                <h3 className="font-semibold mb-3 text-lg">
+                  {getText(q, "question")}
+                </h3>
                 {q.answers.map((a) => {
                   const selected = (answers[q.id] || []).includes(a.id);
                   return (
@@ -313,10 +401,11 @@ export default function TestPage() {
                       <input
                         type="checkbox"
                         checked={selected}
-                        onChange={(e) => handleSelect(q.id, a.id, e.target.checked)}
+                        onChange={(e) =>
+                          handleSelect(q.id, a.id, e.target.checked)
+                        }
                         className="mr-2 accent-green-500"
                       />
-
                       {getText(a, "answer")?.trim() || "(empty option)"}
                     </label>
                   );
@@ -341,7 +430,9 @@ export default function TestPage() {
 
             {test.questions.map((q, i) => {
               const correctAnswers = q.answers.filter((a) => a.is_correct);
-              const userAnswers = q.answers.filter((a) => (answers[q.id] || []).includes(a.id));
+              const userAnswers = q.answers.filter((a) =>
+                (answers[q.id] || []).includes(a.id)
+              );
 
               return (
                 <motion.div
@@ -364,7 +455,9 @@ export default function TestPage() {
                         userAnswers.map((ua, idx) => (
                           <span
                             key={ua.id}
-                            className={ua.is_correct ? "text-green-400" : "text-red-400"}
+                            className={
+                              ua.is_correct ? "text-green-400" : "text-red-400"
+                            }
                           >
                             {getText(ua, "answer") || "—"}
                             {idx < userAnswers.length - 1 ? ", " : ""}
@@ -378,7 +471,9 @@ export default function TestPage() {
 
                   <p className="text-gray-300 mb-3">
                     <span className="text-gray-400">
-                      {lang === "ua" ? "Правильні відповіді: " : "Correct answers: "}
+                      {lang === "ua"
+                        ? "Правильні відповіді: "
+                        : "Correct answers: "}
                     </span>
                     <span className="text-green-400">
                       {correctAnswers.map((ca, idx) => (
@@ -390,7 +485,6 @@ export default function TestPage() {
                     </span>
                   </p>
 
-                  {}
                   <button
                     onClick={() => handleExplain(q, i)}
                     className={`${
@@ -422,8 +516,8 @@ export default function TestPage() {
                         </h4>
 
                         {(lang === "ua"
-                          ? explanations[i].ua
-                          : explanations[i].en || explanations[i].ua
+                            ? explanations[i].ua
+                            : explanations[i].en || explanations[i].ua
                         )
                           .split(/\n|(?=✅|❌|👉)/)
                           .filter((p) => p.trim())
@@ -439,14 +533,15 @@ export default function TestPage() {
               );
             })}
 
-            {}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={handleCertificate}
               className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg w-full font-semibold transition"
             >
-              {lang === "ua" ? "🎓 Отримати сертифікат" : "🎓 Get Certificate"}
+              {lang === "ua"
+                ? "🎓 Отримати сертифікат"
+                : "🎓 Get Certificate"}
             </motion.button>
 
             <motion.button
@@ -461,7 +556,6 @@ export default function TestPage() {
         )}
       </motion.div>
 
-      <Toaster position="top-center" />
     </section>
   );
 }
