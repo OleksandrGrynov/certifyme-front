@@ -18,9 +18,13 @@ import AdminEditTestPage from "./pages/AdminEditTestPage";
 import TestDetailsPage from "./pages/TestDetailsPage"; // new
 import CheckoutPage from "./pages/CheckoutPage";
 import AdminCreateTestPage from "./pages/AdminCreateTestPage.jsx";
+import AchievementListener from "./components/AchievementListener";
+import AdminSMSPage from "./pages/AdminSMSPage";
 function App() {
   return (
     <BrowserRouter>
+      <AchievementListener />
+
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -80,7 +84,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="admin/sms"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminSMSPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
