@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import AuthModal from "./AuthModal";
 
 export default function ProtectedRoute({ children, requiredRole = "user" }) {
@@ -14,16 +14,6 @@ export default function ProtectedRoute({ children, requiredRole = "user" }) {
     const token = localStorage.getItem("token");
 
     if (!token || token.split(".").length !== 3) {
-      if (!toastShownRef.current) {
-        toast.error("Будь ласка, зареєструйтеся або увійдіть, щоб переглянути цю сторінку 💚", {
-          style: {
-            background: "#111",
-            color: "#fff",
-            border: "1px solid #22c55e",
-          },
-        });
-        toastShownRef.current = true;
-      }
       setShowAuth(true);
       setChecked(true);
       return;
@@ -44,12 +34,10 @@ export default function ProtectedRoute({ children, requiredRole = "user" }) {
           });
           toastShownRef.current = true;
         }
-        setChecked(true);
         setIsValidUser(false);
-        return;
+      } else {
+        setIsValidUser(true);
       }
-
-      setIsValidUser(true);
     } catch {
       if (!toastShownRef.current) {
         toast.error("Будь ласка, увійдіть знову 💚", {
@@ -74,13 +62,14 @@ export default function ProtectedRoute({ children, requiredRole = "user" }) {
 
   if (!checked)
     return (
-      <div className="flex justify-center items-center h-screen text-gray-400">Завантаження...</div>
+      <div className="flex justify-center items-center h-screen text-gray-400">
+        Завантаження...
+      </div>
     );
 
   if (!isValidUser) {
     return (
       <>
-        <Toaster position="top-center" />
         {showAuth && <AuthModal isOpen={showAuth} onClose={handleModalClose} />}
       </>
     );
