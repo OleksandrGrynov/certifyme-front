@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import {
-    Trophy, FileCheck, BarChart3, Settings,
-    User, Award, MessageCircle
+    Trophy,
+    FileCheck,
+    BarChart3,
+    Settings,
+    User,
+    Award,
+    MessageCircle,
+    Phone,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence } from "framer-motion";
 
-// окремі сторінки
+// 🧩 Підсторінки
 import AdminUsersPage from "./AdminUsersPage.jsx";
 import AdminTestsPage from "./AdminTestsPage";
 import AdminAchievementsPage from "./AdminAchievementsPage";
@@ -14,12 +20,15 @@ import AdminCertificatesPage from "./AdminCertificatesPage";
 import AdminAnalyticsPage from "./AdminAnalyticsPage";
 import AdminSettingsPage from "./AdminSettingsPage";
 import AdminContactsPage from "./AdminContactsPage";
+import AdminSMSPage from "./AdminSMSPage.jsx";
 
 export default function AdminPage() {
-    const { t } = useTranslation();
+    const { i18n } = useTranslation();
+    const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
+
     const [activeTab, setActiveTab] = useState("users");
 
-    // збереження вибраної вкладки між перезавантаженнями
+    // збереження вибраної вкладки
     useEffect(() => {
         const saved = localStorage.getItem("adminTab");
         if (saved) setActiveTab(saved);
@@ -29,24 +38,29 @@ export default function AdminPage() {
         localStorage.setItem("adminTab", activeTab);
     }, [activeTab]);
 
+    // 🔹 Масив вкладок із перекладом прямо в коді
     const tabs = [
-        { id: "contacts", label: t("admin.contacts"), icon: <MessageCircle size={18} /> },
-        { id: "users", label: t("admin.users"), icon: <User size={18} /> },
-        { id: "tests", label: t("admin.tests"), icon: <Award size={18} /> },
-        { id: "achievements", label: t("admin.achievements"), icon: <Trophy size={18} /> },
-        { id: "certificates", label: t("admin.certificates"), icon: <FileCheck size={18} /> },
-        { id: "analytics", label: t("admin.analytics"), icon: <BarChart3 size={18} /> },
-        { id: "settings", label: t("admin.settings"), icon: <Settings size={18} /> },
+        { id: "contacts", label: tLabel("Заявки", "Contacts"), icon: <MessageCircle size={18} /> },
+        { id: "users", label: tLabel("Користувачі", "Users"), icon: <User size={18} /> },
+        { id: "tests", label: tLabel("Тести", "Tests"), icon: <Award size={18} /> },
+        { id: "achievements", label: tLabel("Досягнення", "Achievements"), icon: <Trophy size={18} /> },
+        { id: "certificates", label: tLabel("Сертифікати", "Certificates"), icon: <FileCheck size={18} /> },
+        { id: "analytics", label: tLabel("Аналітика", "Analytics"), icon: <BarChart3 size={18} /> },
+        { id: "settings", label: tLabel("Налаштування", "Settings"), icon: <Settings size={18} /> },
+        { id: "sms", label: tLabel("SMS розсилка", "SMS Broadcast"), icon: <Phone size={18} /> },
+
     ];
 
     return (
       <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
           <div className="max-w-7xl mx-auto bg-gray-900/80 backdrop-blur-lg border border-gray-800 rounded-2xl shadow-2xl p-6 space-y-8">
               <div className="flex flex-col sm:flex-row justify-between items-center">
-                  <h1 className="text-3xl font-bold text-green-500">⚙️ {t("admin.title")}</h1>
+                  <h1 className="text-3xl font-bold text-green-500">
+                      ⚙️ {tLabel("Панель адміністратора", "Admin panel")}
+                  </h1>
               </div>
 
-              {/* Вкладки */}
+              {/* 🔘 Вкладки */}
               <div className="flex flex-wrap gap-3 border-b border-gray-700 pb-3">
                   {tabs.map((tab) => (
                     <button
@@ -64,7 +78,7 @@ export default function AdminPage() {
                   ))}
               </div>
 
-              {/* Контент */}
+              {/* 🔹 Контент */}
               <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 min-h-[400px]">
                   <AnimatePresence mode="wait">
                       <div key={activeTab}>
@@ -75,6 +89,8 @@ export default function AdminPage() {
                           {activeTab === "certificates" && <AdminCertificatesPage />}
                           {activeTab === "analytics" && <AdminAnalyticsPage />}
                           {activeTab === "settings" && <AdminSettingsPage />}
+                          {activeTab === "sms" && <AdminSMSPage />}
+
                       </div>
                   </AnimatePresence>
               </div>
