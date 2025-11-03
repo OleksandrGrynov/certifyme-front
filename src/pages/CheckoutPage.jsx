@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
+import tToast from "../lib/tToast";
 
 export default function CheckoutPage() {
   const { id } = useParams();
@@ -39,7 +40,7 @@ export default function CheckoutPage() {
       setPaying(true);
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("Будь ласка, увійдіть у профіль перед оплатою");
+        tToast.error("Будь ласка, увійдіть у профіль перед оплатою", "Please sign in before paying");
         navigate("/login");
         return;
       }
@@ -58,11 +59,11 @@ export default function CheckoutPage() {
         localStorage.setItem("lastPaidTestId", id);
         window.location.href = data.url;
       } else {
-        toast.error(data?.message || "Помилка створення сесії оплати");
+        tToast.error(data?.message || "Помилка створення сесії оплати", data?.message || "Failed to create checkout session");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Помилка мережі");
+      tToast.error("Помилка мережі", "Network error");
     } finally {
       setPaying(false);
     }
@@ -120,32 +121,17 @@ export default function CheckoutPage() {
           <span className="text-lg text-white font-semibold">
             {new Intl.NumberFormat("uk-UA", {
               style: "currency",
-              currency: (test.currency || "usd").toUpperCase() === "UAH" ? "UAH" : "USD",
-            }).format(
-              (test.currency || "usd").toUpperCase() === "UAH"
-                ? test.price_uah || 0
-                : (test.price_cents || 0) / 100,
-            )}
+              currency: "UAH",
+            }).format(test?.price_uah || 0)}
           </span>
         </div>
 
         <button
           onClick={handlePayment}
           disabled={paying}
-          className={`w-full py-3 rounded-lg font-semibold transition ${
-            paying
-              ? "bg-gray-600 cursor-not-allowed"
-              : "bg-emerald-500 hover:bg-emerald-400 text-gray-900 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-          }`}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-60"
         >
-          {paying ? "Створення сесії..." : "Перейти до оплати"}
-        </button>
-
-        <button
-          onClick={() => navigate("/tests")}
-          className="mt-4 w-full py-2 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 transition"
-        >
-          Назад
+          {paying ? "Обробка..." : "Оплатити через Stripe"}
         </button>
       </motion.div>
     </section>
