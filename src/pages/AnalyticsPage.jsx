@@ -2,8 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchWithAuth } from "../lib/apiClient";
 import { motion } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
-import AuthModal from "../components/AuthModal";
 
 export default function AnalyticsPage() {
   const { i18n } = useTranslation();
@@ -16,31 +14,14 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [isPublicView, setIsPublicView] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
 
-  // 🔹 Перевірка авторизації
+  // 🔹 Завантаження аналітики, якщо користувач авторизований
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error(
-        tLabel(
-          "Будь ласка, зареєструйтеся, щоб переглянути аналітику 💚",
-          "Please register to view analytics 💚"
-        ),
-        {
-          style: {
-            background: "#111",
-            color: "#fff",
-            border: "1px solid #22c55e",
-          },
-        }
-      );
-      setShowAuth(true);
-    } else {
-      fetchAll();
-    }
-  }, []);
+    if (token) fetchAll();
+  }, [i18n.language]);
 
+  // 🔸 Отримання аналітики користувача
   const fetchAll = async () => {
     setLoading(true);
     setErr("");
@@ -79,12 +60,13 @@ export default function AnalyticsPage() {
     }
   };
 
+  // 🔸 Компонент картки статистики
   const StatCard = ({ title, value, hint }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-gray-900/60 border border-gray-700 rounded-xl p-4 flex flex-col backdrop-blur-sm shadow-lg hover:shadow-green-500/10 transition"
+      className="bg-gray-900/60 border border-gray-700 rounded-xl p-4 flex flex-col backdrop-blur-sm shadow-lg hover:border-green-500/30 hover:shadow-green-500/10 transition"
     >
       <div className="text-xs text-gray-400">{title}</div>
       <div className="text-2xl font-bold mt-2 text-green-400">{value}</div>
@@ -92,6 +74,7 @@ export default function AnalyticsPage() {
     </motion.div>
   );
 
+  // 🔸 Форматування дати
   const formatDate = (iso) => {
     try {
       const d = new Date(iso);
@@ -101,57 +84,176 @@ export default function AnalyticsPage() {
     }
   };
 
-  const LineChart = ({ points = [], svgHeight = 120, color = "#34d399" }) => {
+  // 🔸 Інтерактивний лінійний графік з підказками
+  const LineChart = ({ points = [], svgHeight = 180, color = "#34d399" }) => {
     if (!points || points.length === 0)
-      return <div className="text-gray-500">{tLabel("Немає даних", "No data")}</div>;
-    const max = Math.max(...points.map((p) => p.count), 1);
-    const w = Math.max(points.length * 8, 200);
-    const stepX = w / (points.length - 1 || 1);
-    const coords = points
-      .map((p, i) => `${i * stepX},${svgHeight - (p.count / max) * svgHeight}`)
+      return <div className="text-gray-500 text-center py-8">{tLabel("Немає даних", "No data")}</div>;
+
+    // 🔹 Сортуємо за датами (щоб нові праворуч)
+    const data = [...points].sort(
+      (a, b) => new Date(a.date || a.day) - new Date(b.date || b.day)
+    );
+
+    const max = Math.max(...data.map((p) => p.count || 0), 1);
+    const w = Math.max(data.length * 60, 400);
+    const stepX = w / (data.length - 1 || 1);
+
+    // Крива Безьє для плавності
+    const path = data
+      .map((p, i) => {
+        const x = i * stepX;
+        const y = svgHeight - (p.count / max) * svgHeight;
+        if (i === 0) return `M ${x},${y}`;
+        const prevX = (i - 1) * stepX;
+        const prevY = svgHeight - (data[i - 1].count / max) * svgHeight;
+        const cx = (prevX + x) / 2;
+        return `C ${cx},${prevY} ${cx},${y} ${x},${y}`;
+      })
       .join(" ");
+
+    const [hoverIndex, setHoverIndex] = useState(null);
+
     return (
       <svg
         width="100%"
+        height={svgHeight}
         viewBox={`0 0 ${w} ${svgHeight}`}
         preserveAspectRatio="none"
         className="rounded"
       >
-        <polyline fill="none" stroke={color} strokeWidth="2" points={coords} />
-        <polyline
+        {/* Підсвічування під лінією */}
+        <path
+          d={`${path} L ${w},${svgHeight} L 0,${svgHeight} Z`}
           fill={`${color}22`}
           stroke="none"
-          points={`${coords} ${w},${svgHeight} 0,${svgHeight}`}
         />
+
+        {/* Основна лінія */}
+        <motion.path
+          d={path}
+          fill="none"
+          stroke={color}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+        />
+
+        {/* Точки і підказки */}
+        {data.map((p, i) => {
+          const x = i * stepX;
+          const y = svgHeight - (p.count / max) * svgHeight;
+          const dateLabel = new Date(p.date || p.day).toLocaleDateString(
+            i18n.language === "ua" ? "uk-UA" : "en-US",
+            { day: "numeric", month: "short" }
+          );
+
+          return (
+            <g key={i}>
+              <motion.circle
+                cx={x}
+                cy={y}
+                r={hoverIndex === i ? 6 : 4}
+                fill={color}
+                className="cursor-pointer"
+                onMouseEnter={() => setHoverIndex(i)}
+                onMouseLeave={() => setHoverIndex(null)}
+                whileHover={{ scale: 1.2 }}
+              />
+              {hoverIndex === i && (
+                <motion.g
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="pointer-events-none"
+                >
+                  <rect
+                    x={x - 40}
+                    y={y - 50}
+                    width="80"
+                    height="32"
+                    rx="6"
+                    ry="6"
+                    fill="#0f172a"
+                    stroke={color}
+                    strokeWidth="0.5"
+                  />
+                  <text
+                    x={x}
+                    y={y - 34}
+                    textAnchor="middle"
+                    className="text-[10px] fill-green-300"
+                  >
+                    {dateLabel}
+                  </text>
+                  <text
+                    x={x}
+                    y={y - 22}
+                    textAnchor="middle"
+                    className="text-[11px] fill-white font-semibold"
+                  >
+                    {p.count}
+                  </text>
+                </motion.g>
+              )}
+            </g>
+          );
+        })}
       </svg>
     );
   };
 
+  // 🔸 Інтерактивний стовпчиковий графік
   const BarChart = ({ items = [] }) => {
     if (!items || items.length === 0)
-      return <div className="text-gray-400">{tLabel("Немає даних", "No data")}</div>;
-    const max = Math.max(...items.map((i) => i.tests_taken), 1);
+      return <div className="text-gray-400 text-center py-6">{tLabel("Немає даних", "No data")}</div>;
+
+    const max = Math.max(...items.map((i) => i.tests_taken || 0), 1);
+    const [hovered, setHovered] = useState(null);
+
     return (
-      <div className="flex items-end gap-3 h-36">
-        {items.map((it) => {
-          const h = Math.round((it.tests_taken / max) * 100);
+      <div className="relative flex items-end gap-4 h-48 p-4">
+        {items.map((it, i) => {
+          const value = it.tests_taken || 0;
+          const name = it.name || `#${i + 1}`;
+          const h = Math.round((value / max) * 100);
+
           return (
-            <div key={it.name} className="flex-1 text-center">
-              <div className="h-full flex items-end justify-center">
-                <div
-                  title={`${it.name}: ${it.tests_taken}`}
-                  style={{ height: `${h}%` }}
-                  className="w-6 bg-green-500 rounded-t"
-                />
-              </div>
-              <div className="text-xs text-gray-300 mt-2 truncate">{it.name}</div>
-            </div>
+            <motion.div
+              key={i}
+              className="flex-1 text-center relative cursor-pointer group"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              style={{ transformOrigin: "bottom" }}
+            >
+              <motion.div
+                style={{ height: `${h}%` }}
+                className="mx-auto w-8 rounded-t-lg bg-gradient-to-t from-green-500 to-emerald-300 shadow-[0_0_10px_rgba(34,197,94,0.3)] group-hover:from-green-400 group-hover:to-lime-300 transition-all duration-300"
+                whileHover={{ scaleX: 1.1 }}
+              ></motion.div>
+
+              <div className="text-xs text-gray-300 mt-2 truncate">{name}</div>
+
+              {hovered === i && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900/90 text-green-400 text-xs px-2 py-1 rounded-lg border border-green-500/40 whitespace-nowrap shadow-lg"
+                >
+                  {`${name}: ${value}`}
+                </motion.div>
+              )}
+            </motion.div>
           );
         })}
       </div>
     );
   };
 
+  // 🔸 Підготовка статистики
   const stats = useMemo(
     () => ({
       enrolledCourses: overview?.courses_enrolled ?? "—",
@@ -166,9 +268,6 @@ export default function AnalyticsPage() {
 
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-100 overflow-hidden">
-      <Toaster position="top-center" />
-      {showAuth && <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />}
-
       {/* background glow */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/3 -left-1/3 w-[600px] h-[600px] bg-green-500/20 blur-[200px] rounded-full animate-pulse"></div>
@@ -186,19 +285,22 @@ export default function AnalyticsPage() {
         </h1>
 
         {err && (
-          <div className="bg-red-900/30 text-red-300 p-3 rounded mb-4 border border-red-700/30">
+          <div className="bg-red-900/30 text-red-300 p-3 rounded mb-4 border border-red-700/30 text-center">
             {err}
           </div>
         )}
 
         {isPublicView && (
-          <div className="bg-yellow-900/20 text-yellow-200 p-3 rounded mb-4">
+          <div className="bg-yellow-900/20 text-yellow-200 p-3 rounded mb-4 text-center">
             {tLabel("Показана публічна версія аналітики.", "Public analytics view.")}
           </div>
         )}
 
-        {/* якщо користувач неавторизований – нічого далі не вантажимо */}
-        {!localStorage.getItem("token") ? null : (
+        {!localStorage.getItem("token") ? (
+          <div className="text-center text-gray-400 mt-10">
+            {tLabel("Будь ласка, увійдіть, щоб переглянути аналітику.", "Please log in to view analytics.")}
+          </div>
+        ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
               <StatCard title={tLabel("Курси (підписані)", "Courses (enrolled)")} value={stats.enrolledCourses} />
