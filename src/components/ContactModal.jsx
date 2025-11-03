@@ -1,7 +1,9 @@
 import { useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
+import tToast from "../lib/tToast";
 
 export default function ContactModal({ isOpen, onClose }) {
     const { t } = useTranslation();
@@ -73,11 +75,11 @@ export default function ContactModal({ isOpen, onClose }) {
             } else {
                 const errorData = await response.json();
                 console.error("Server error:", errorData);
-                toast.error("⚠️ Помилка при відправці форми. Спробуйте пізніше.");
+                tToast.error("⚠️ Помилка при відправці форми. Спробуйте пізніше.", "⚠️ Failed to send form. Try again later.");
             }
         } catch (err) {
             console.error("❌ Fetch error:", err);
-            toast.error("⚠️ Не вдалося зʼєднатися із сервером.");
+            tToast.error("⚠️ Не вдалося зʼєднатися із сервером.", "⚠️ Failed to connect to server.");
         }
     };
 
