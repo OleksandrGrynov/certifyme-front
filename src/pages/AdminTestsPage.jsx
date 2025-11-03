@@ -4,20 +4,18 @@ import {
   Plus,
   Trash,
   Edit3,
-  Save,
-  Settings2,
-  X,
   CheckCircle,
   AlertTriangle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function AdminTestsPage() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
 
+  const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
+
   const [tests, setTests] = useState([]);
-  const [editingTest, setEditingTest] = useState(null);
   const [toast, setToast] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [testToDelete, setTestToDelete] = useState(null);
@@ -50,30 +48,27 @@ export default function AdminTestsPage() {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`http://localhost:5000/api/tests/${testToDelete.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/tests/${testToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const data = await res.json();
 
       if (data.success) {
         setTests((prev) => prev.filter((t) => t.id !== testToDelete.id));
-        showToast(
-          i18n.language === "en"
-            ? "✅ Test deleted successfully!"
-            : "✅ Тест успішно видалено!"
-        );
+        showToast(tLabel("✅ Тест успішно видалено!", "✅ Test deleted successfully!"));
       } else {
         showToast(
-          i18n.language === "en"
-            ? "❌ Error deleting test!"
-            : "❌ Помилка при видаленні тесту!",
+          tLabel("❌ Помилка при видаленні тесту!", "❌ Error deleting test!"),
           "error"
         );
       }
     } catch (err) {
       console.error("❌ Error deleting test:", err);
-      showToast("❌ Server error!", "error");
+      showToast(tLabel("❌ Помилка сервера!", "❌ Server error!"), "error");
     } finally {
       setShowConfirm(false);
       setTestToDelete(null);
@@ -107,21 +102,24 @@ export default function AdminTestsPage() {
 
       {/* Заголовок */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl text-green-400 font-bold">{t("admin.tests")}</h2>
+        <h2 className="text-xl text-green-400 font-bold">
+          {tLabel("Тести", "Tests")}
+        </h2>
         <button
           onClick={() => navigate("/admin/tests/create")}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          <Plus size={18} /> {t("admin.createTest")}
+          <Plus size={18} /> {tLabel("Створити тест", "Create test")}
         </button>
       </div>
 
       {/* 📋 Список тестів */}
       {tests.length === 0 ? (
         <p className="text-gray-400 text-center">
-          {i18n.language === "en"
-            ? "No tests yet. Create one!"
-            : "Поки що немає тестів. Створи перший!"}
+          {tLabel(
+            "Поки що немає тестів. Створи перший!",
+            "No tests yet. Create one!"
+          )}
         </p>
       ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -151,17 +149,16 @@ export default function AdminTestsPage() {
                   onClick={() => handleEdit(tst)}
                   className="bg-yellow-500 hover:bg-yellow-600 flex-1 py-1.5 rounded flex items-center justify-center gap-1"
                 >
-                  <Edit3 size={16} /> {t("common.edit")}
+                  <Edit3 size={16} /> {tLabel("Редагувати", "Edit")}
                 </button>
                 <button
                   onClick={() => confirmDelete(tst)}
                   className="bg-red-600 hover:bg-red-700 flex-1 py-1.5 rounded flex items-center justify-center gap-1"
                 >
-                  <Trash size={16} /> {t("common.delete")}
+                  <Trash size={16} /> {tLabel("Видалити", "Delete")}
                 </button>
               </div>
             </div>
-
           ))}
         </div>
       )}
@@ -173,15 +170,16 @@ export default function AdminTestsPage() {
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="text-yellow-400" size={28} />
               <h3 className="text-lg font-bold text-white">
-                {i18n.language === "en"
-                  ? "Confirm deletion"
-                  : "Підтвердити видалення"}
+                {tLabel("Підтвердити видалення", "Confirm deletion")}
               </h3>
             </div>
             <p className="text-gray-300 mb-6">
-              {i18n.language === "en"
-                ? `Are you sure you want to delete "${testToDelete.title_en || testToDelete.title_ua}"?`
-                : `Ви впевнені, що хочете видалити "${testToDelete.title_ua}"?`}
+              {tLabel(
+                `Ви впевнені, що хочете видалити "${testToDelete.title_ua}"?`,
+                `Are you sure you want to delete "${
+                  testToDelete.title_en || testToDelete.title
+                }"?`
+              )}
             </p>
 
             <div className="flex justify-end gap-3">
@@ -189,13 +187,13 @@ export default function AdminTestsPage() {
                 onClick={() => setShowConfirm(false)}
                 className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-gray-200"
               >
-                {i18n.language === "en" ? "Cancel" : "Скасувати"}
+                {tLabel("Скасувати", "Cancel")}
               </button>
               <button
                 onClick={handleDeleteTest}
                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-white"
               >
-                {i18n.language === "en" ? "Delete" : "Видалити"}
+                {tLabel("Видалити", "Delete")}
               </button>
             </div>
           </div>
