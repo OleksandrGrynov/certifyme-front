@@ -1,25 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import tToast, { tLabel } from "../lib/tToast";
 
 export default function TestsPage() {
   const { i18n } = useTranslation();
   const [tests, setTests] = useState([]);
   const [ownedIds, setOwnedIds] = useState(new Set());
+  const [passedTests, setPassedTests] = useState([]); // ✅ новий стейт
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  /** ─────────────────────────────
-   * 🧩 Функція для завантаження тестів + доступних користувачу
-   * ───────────────────────────── */
-  const loadTests = async () => {
+  // 🧩 Завантаження тестів і доступів користувача
+  const loadTests = useCallback(async () => {
     try {
       setLoading(true);
       const testsRes = await fetch(`http://localhost:5000/api/tests?lang=${i18n.language}`);
@@ -37,11 +37,22 @@ export default function TestsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [i18n.language, token]);
 
-  /** ─────────────────────────────
-   * 💰 Підтвердження локальної оплати
-   * ───────────────────────────── */
+  // 🧾 Завантаження пройдених тестів користувача
+  const loadPassedTests = useCallback(async () => {
+    try {
+      if (!token) return;
+      const res = await fetch("http://localhost:5000/api/tests/user/passed", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) setPassedTests(data.tests);
+    } catch (err) {
+      console.error("❌ loadPassedTests:", err);
+    }
+  }, [token]);
+
   /** ─────────────────────────────
    * 💰 Обробка після повернення зі Stripe (?paid=true)
    * ───────────────────────────── */
@@ -52,16 +63,12 @@ export default function TestsPage() {
       const testId = params.get("testId");
       if (!isPaid || !testId) return;
 
-      setShowSuccess(true);
-      const timer = setTimeout(() => setShowSuccess(false), 4000);
-
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
 
         console.log("🎯 Grant access request:", { testId });
 
-        // 🔹 Запит на новий бекенд-ендпоінт
         const res = await fetch("http://localhost:5000/api/user/tests/grant", {
           method: "POST",
           headers: {
@@ -74,35 +81,35 @@ export default function TestsPage() {
         const data = await res.json();
         if (data.success) {
           console.log("✅ Access granted");
-          toast.success("✅ Оплата успішна! Доступ відкрито.");
 
-          // Оновлюємо список без reload
+          toast.dismiss();
+          tToast.success(
+            "✅ Оплата успішна! Доступ до тесту відкрито.",
+            "✅ Payment successful! Access granted."
+          );
+
           await loadTests();
-
-          // Прибираємо параметри
           navigate("/tests", { replace: true });
         } else {
           console.warn("⚠️ Grant response:", data);
-          toast.error("⚠️ Не вдалося видати доступ");
+          tToast.error("⚠️ Не вдалося видати доступ", "⚠️ Failed to grant access");
         }
       } catch (err) {
         console.error("❌ grant error:", err);
-        toast.error("⚠️ Помилка grant запиту");
+        tToast.error("⚠️ Помилка grant запиту", "⚠️ Grant request error");
       }
-
-      return () => clearTimeout(timer);
     };
 
     grantAccessAfterPayment();
-  }, [location, navigate]);
-
+  }, [location.search, loadTests, navigate]);
 
   /** ─────────────────────────────
    * 📥 Початкове завантаження
    * ───────────────────────────── */
   useEffect(() => {
     loadTests();
-  }, [token, i18n.language]);
+    loadPassedTests();
+  }, [loadTests, loadPassedTests]);
 
   /** ─────────────────────────────
    * 🔍 Фільтр тестів
@@ -110,11 +117,13 @@ export default function TestsPage() {
   const filtered = useMemo(() => {
     if (activeTab === "owned") return tests.filter((t) => ownedIds.has(t.id));
     if (activeTab === "notOwned") return tests.filter((t) => !ownedIds.has(t.id));
+    if (activeTab === "passed") return passedTests;
     return tests;
-  }, [tests, ownedIds, activeTab]);
+  }, [tests, ownedIds, activeTab, passedTests]);
 
-  const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
-
+  /** ─────────────────────────────
+   * 💲 Форматування валюти
+   * ───────────────────────────── */
   const formatCurrency = (cents, currency = "usd") => {
     const amount = (cents || 0) / 100;
     const locale = i18n.language === "ua" ? "uk-UA" : "en-US";
@@ -131,7 +140,7 @@ export default function TestsPage() {
    * ───────────────────────────── */
   const handleBuy = async (testId) => {
     if (!token) {
-      toast.error(tLabel("Спочатку увійдіть у профіль", "Please sign in first"));
+      tToast.error("Спочатку увійдіть у профіль", "Please sign in first");
       return;
     }
     try {
@@ -151,11 +160,14 @@ export default function TestsPage() {
         localStorage.setItem("lastPaidTestId", testId);
         window.location.href = data.url;
       } else {
-        toast.error(data?.message || tLabel("Помилка ініціалізації оплати", "Payment init error"));
+        tToast.error(
+          data?.message || "Помилка ініціалізації оплати",
+          data?.message || "Payment initialization error"
+        );
       }
     } catch (e) {
       console.error(e);
-      toast.error(tLabel("Помилка мережі", "Network error"));
+      tToast.error("Помилка мережі", "Network error");
     } finally {
       setBuyingId(null);
     }
@@ -166,24 +178,6 @@ export default function TestsPage() {
    * ───────────────────────────── */
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
-      {/* ✅ Спливаюче повідомлення */}
-      <AnimatePresence>
-        {showSuccess && (
-          <motion.div
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 font-semibold"
-          >
-            {tLabel(
-              "✅ Оплата успішна! Доступ до тесту відкрито.",
-              "✅ Payment successful! Access granted."
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <h1 className="text-3xl font-bold text-center mb-8">Тести / Tests</h1>
 
       {/* 🔘 Перемикач вкладок */}
@@ -192,6 +186,9 @@ export default function TestsPage() {
           { key: "all", ua: "Усі", en: "All" },
           { key: "owned", ua: "Придбані", en: "Owned" },
           { key: "notOwned", ua: "Ще не придбані", en: "Not purchased" },
+          ...(passedTests.length > 0
+            ? [{ key: "passed", ua: "Пройдені", en: "Passed" }]
+            : []),
         ].map((tab) => (
           <button
             key={tab.key}
@@ -221,6 +218,11 @@ export default function TestsPage() {
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
           {filtered.map((test) => {
             const owned = ownedIds.has(test.id);
+            const isPassed = activeTab === "passed";
+            const scorePercent = test.total
+              ? Math.round((test.score / test.total) * 100)
+              : 0;
+
             return (
               <motion.div
                 key={test.id}
@@ -240,21 +242,43 @@ export default function TestsPage() {
                 )}
 
                 <div className="flex items-start justify-between gap-3 mb-2">
-                  <h2 className="text-xl font-semibold">{test.title}</h2>
+                  <h2 className="text-xl font-semibold">
+                    {test.title || test.title_ua || "Test"}
+                  </h2>
                   <span
                     className={`text-xs px-2 py-1 rounded-md border ${
                       owned
                         ? "bg-green-900/40 text-green-300 border-green-700"
-                        : "bg-gray-800 text-gray-300 border-gray-600"
+                        : isPassed
+                          ? "bg-blue-900/40 text-blue-300 border-blue-700"
+                          : "bg-gray-800 text-gray-300 border-gray-600"
                     }`}
                   >
-                    {owned ? tLabel("Доступ є", "Owned") : tLabel("Потрібна оплата", "Locked")}
+                    {isPassed
+                      ? tLabel("Пройдено", "Passed")
+                      : owned
+                        ? tLabel("Доступ є", "Owned")
+                        : tLabel("Потрібна оплата", "Locked")}
                   </span>
                 </div>
 
-                <p className="text-gray-400 text-sm mb-4 line-clamp-3">{test.description}</p>
+                <p className="text-gray-400 text-sm mb-4 line-clamp-3">
+                  {test.description || test.title_en}
+                </p>
 
-                {!owned && (
+                {isPassed && (
+                  <div className="text-sm text-gray-300 mb-3">
+                    ✅ {tLabel("Результат:", "Score:")} {test.score}/{test.total} (
+                    {scorePercent}%)
+                    <br />
+                    🕓{" "}
+                    {new Date(test.created_at).toLocaleString(
+                      i18n.language === "ua" ? "uk-UA" : "en-US"
+                    )}
+                  </div>
+                )}
+
+                {!owned && !isPassed && (
                   <div className="text-sm text-gray-300 mb-3">
                     {i18n.language === "ua"
                       ? formatCurrency(test.price_uah * 100, "UAH")
@@ -263,7 +287,93 @@ export default function TestsPage() {
                 )}
 
                 <div className="flex gap-3 mt-auto">
-                  {owned ? (
+                  {isPassed ? (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const token = localStorage.getItem("token");
+                          if (!token) {
+                            tToast.error("Спочатку увійдіть у профіль", "Please sign in first");
+                            return;
+                          }
+
+                          // 🔹 Показуємо початковий лоадер
+                          const loadingId = toast.loading("⏳ Перевіряємо сертифікат...");
+
+                          // 1️⃣ Спочатку пробуємо знайти існуючий PDF
+                          const checkRes = await fetch(
+                            `http://localhost:5000/api/tests/certificate/check/${test.test_id || test.id}`,
+                            { headers: { Authorization: `Bearer ${token}` } }
+                          );
+
+                          toast.dismiss(loadingId);
+
+                          if (checkRes.ok) {
+                            // ✅ Якщо існує — завантажуємо його
+                            const blob = await checkRes.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = `Certificate_${test.title_ua || test.title_en}.pdf`;
+                            link.click();
+                            window.URL.revokeObjectURL(url);
+
+                            tToast.success(
+                              "🎓 Завантажено існуючий сертифікат!",
+                              "🎓 Existing certificate downloaded!"
+                            );
+                            return;
+                          }
+
+                          // 2️⃣ Якщо не знайдено — генеруємо новий
+                          const genId = toast.loading("🧾 Генеруємо новий сертифікат...");
+
+                          const res = await fetch("http://localhost:5000/api/tests/certificate", {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({
+                              test_id: test.test_id || test.id,
+                              test_title: test.title_ua || test.title_en,
+                              score: test.score,
+                              total: test.total,
+                            }),
+                          });
+
+                          toast.dismiss(genId);
+
+                          if (!res.ok) throw new Error("Certificate generation failed");
+
+                          // ⬇️ Завантажуємо PDF
+                          const blob = await res.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const link = document.createElement("a");
+                          link.href = url;
+                          link.download = `Certificate_${test.title_ua || test.title_en}.pdf`;
+                          link.click();
+                          window.URL.revokeObjectURL(url);
+
+                          tToast.success(
+                            "🎓 Сертифікат успішно згенеровано!",
+                            "🎓 Certificate generated!"
+                          );
+                        } catch (err) {
+                          console.error("❌ Certificate error:", err);
+                          toast.dismiss();
+                          tToast.error(
+                            "Не вдалося створити або завантажити сертифікат",
+                            "Failed to generate or fetch certificate"
+                          );
+                        }
+                      }}
+                      className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black py-2 rounded-md text-sm font-semibold transition"
+                    >
+                      🎓 {tLabel("Сертифікат", "Certificate")}
+                    </button>
+                  ) : owned ? (
+
                     <>
                       <button
                         onClick={async () => {
@@ -278,15 +388,13 @@ export default function TestsPage() {
                             if (data.hasAccess) {
                               window.location.href = `/tests/${test.id}`;
                             } else {
-                              toast.error(
-                                tLabel(
-                                  "💳 Спочатку оплатіть тест!",
-                                  "💳 Please purchase the test first!"
-                                )
+                              tToast.error(
+                                "💳 Спочатку оплатіть тест!",
+                                "💳 Please purchase the test first!"
                               );
                             }
-                          } catch (err) {
-                            toast.error(tLabel("Помилка перевірки доступу", "Access check error"));
+                          } catch {
+                            tToast.error("Помилка перевірки доступу", "Access check error");
                           }
                         }}
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md text-sm font-semibold transition"
@@ -317,6 +425,7 @@ export default function TestsPage() {
                     </>
                   )}
                 </div>
+
               </motion.div>
             );
           })}
