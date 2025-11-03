@@ -24,7 +24,8 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
 export default function AdminAnalyticsPage() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
   const lang = i18n.language === "en" ? "en" : "ua";
 
   const [overview, setOverview] = useState(null);
@@ -34,26 +35,17 @@ export default function AdminAnalyticsPage() {
   const [topUsers, setTopUsers] = useState([]);
   const [days, setDays] = useState(30);
 
+  // 📊 Завантаження аналітики
   const loadData = async () => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
 
     const [o, u, p, t, us] = await Promise.all([
-      fetch(`http://localhost:5000/api/admin/analytics/overview?lang=${lang}`, { headers }).then(
-        (r) => r.json(),
-      ),
-      fetch(`http://localhost:5000/api/admin/analytics/daily-users?days=${days}&lang=${lang}`, {
-        headers,
-      }).then((r) => r.json()),
-      fetch(`http://localhost:5000/api/admin/analytics/payments-daily?days=${days}&lang=${lang}`, {
-        headers,
-      }).then((r) => r.json()),
-      fetch(`http://localhost:5000/api/admin/analytics/top-tests?lang=${lang}`, { headers }).then(
-        (r) => r.json(),
-      ),
-      fetch(`http://localhost:5000/api/admin/analytics/top-users?lang=${lang}`, { headers }).then(
-        (r) => r.json(),
-      ),
+      fetch(`http://localhost:5000/api/admin/analytics/overview?lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`http://localhost:5000/api/admin/analytics/daily-users?days=${days}&lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`http://localhost:5000/api/admin/analytics/payments-daily?days=${days}&lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`http://localhost:5000/api/admin/analytics/top-tests?lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`http://localhost:5000/api/admin/analytics/top-users?lang=${lang}`, { headers }).then((r) => r.json()),
     ]);
 
     if (o.success) setOverview(o.data);
@@ -70,7 +62,7 @@ export default function AdminAnalyticsPage() {
   if (!overview)
     return (
       <p className="text-gray-400 text-center mt-10 animate-pulse">
-        {lang === "ua" ? "Завантаження аналітики..." : "Loading analytics..."}
+        {tLabel("Завантаження аналітики...", "Loading analytics...")}
       </p>
     );
 
@@ -78,7 +70,7 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {}
+      {/* 🔘 Вибір періоду */}
       <div className="flex justify-end gap-2 mb-4">
         {[7, 30, 90].map((d) => (
           <button
@@ -90,50 +82,23 @@ export default function AdminAnalyticsPage() {
                 : "bg-gray-800 text-gray-300 hover:bg-gray-700"
             }`}
           >
-            {d} {lang === "ua" ? "днів" : "days"}
+            {d} {tLabel("днів", "days")}
           </button>
         ))}
       </div>
 
-      {}
+      {/* 📈 Загальна статистика */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard
-          icon={<Users />}
-          title={lang === "ua" ? "Користувачів" : "Users"}
-          value={overview.total_users}
-        />
-        <StatCard
-          icon={<BookOpen />}
-          title={lang === "ua" ? "Тестів" : "Tests"}
-          value={overview.tests}
-        />
-        <StatCard
-          icon={<FileCheck2 />}
-          title={lang === "ua" ? "Сертифікатів" : "Certificates"}
-          value={overview.certificates}
-        />
-        <StatCard
-          icon={<BarChart3 />}
-          title={lang === "ua" ? "Середній % успіху" : "Average score"}
-          value={`${overview.avg_percent}%`}
-        />
-        <StatCard
-          icon={<DollarSign />}
-          title={lang === "ua" ? "Продажі (USD)" : "Sales (USD)"}
-          value={overview.payments_total.toFixed(2)}
-        />
-
-        <StatCard
-          icon={<Calendar />}
-          title={lang === "ua" ? "Оновлено" : "Updated"}
-          value={formatDate(overview.last_updated)}
-        />
+        <StatCard icon={<Users />} title={tLabel("Користувачів", "Users")} value={overview.total_users} />
+        <StatCard icon={<BookOpen />} title={tLabel("Тестів", "Tests")} value={overview.tests} />
+        <StatCard icon={<FileCheck2 />} title={tLabel("Сертифікатів", "Certificates")} value={overview.certificates} />
+        <StatCard icon={<BarChart3 />} title={tLabel("Середній % успіху", "Average score")} value={`${overview.avg_percent}%`} />
+        <StatCard icon={<DollarSign />} title={tLabel("Продажі (USD)", "Sales (USD)")} value={overview.payments_total.toFixed(2)} />
+        <StatCard icon={<Calendar />} title={tLabel("Оновлено", "Updated")} value={formatDate(overview.last_updated)} />
       </div>
 
-      {}
-      <ChartBox
-        title={lang === "ua" ? `Нові користувачі (${days} днів)` : `New users (${days} days)`}
-      >
+      {/* 📊 Нові користувачі */}
+      <ChartBox title={tLabel(`Нові користувачі (${days} днів)`, `New users (${days} days)`)} >
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={usersDaily}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -145,8 +110,8 @@ export default function AdminAnalyticsPage() {
         </ResponsiveContainer>
       </ChartBox>
 
-      {}
-      <ChartBox title={lang === "ua" ? `Оплати (${days} днів)` : `Payments (${days} days)`}>
+      {/* 💰 Оплати */}
+      <ChartBox title={tLabel(`Оплати (${days} днів)`, `Payments (${days} days)`)} >
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={paymentsDaily}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -158,11 +123,11 @@ export default function AdminAnalyticsPage() {
         </ResponsiveContainer>
       </ChartBox>
 
-      {}
+      {/* 🏆 Топ тестів */}
       <div className="bg-gray-900/70 p-6 rounded-2xl border border-gray-800 shadow-lg">
         <h3 className="text-lg md:text-xl text-green-400 font-semibold mb-5 flex items-center gap-2">
           <BarChart3 size={22} />
-          {lang === "ua" ? "Топ тестів" : "Top tests"}
+          {tLabel("Топ тестів", "Top tests")}
         </h3>
 
         {topTests.length ? (
@@ -183,37 +148,35 @@ export default function AdminAnalyticsPage() {
                         : ""
                 }`}
               >
-                {}
                 <div className="absolute top-2 right-3 text-xs text-gray-500">#{i + 1}</div>
 
-                {}
                 <div className="flex items-center gap-2 mb-3">
                   {i < 3 && (
                     <Trophy
                       size={18}
                       className={
-                        i === 0 ? "text-yellow-400" : i === 1 ? "text-gray-300" : "text-amber-700"
+                        i === 0
+                          ? "text-yellow-400"
+                          : i === 1
+                            ? "text-gray-300"
+                            : "text-amber-700"
                       }
                     />
                   )}
                   <h4 className="text-lg font-semibold text-white truncate">{t.test}</h4>
                 </div>
 
-                {}
                 <div className="h-2 bg-gray-700 rounded-full overflow-hidden mb-2">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{
-                      width: `${(t.count / topTests[0].count) * 100}%`,
-                    }}
+                    animate={{ width: `${(t.count / topTests[0].count) * 100}%` }}
                     transition={{ duration: 0.6 }}
                     className="h-full bg-green-500"
                   />
                 </div>
 
-                {}
                 <p className="text-sm text-gray-400 mt-1">
-                  {lang === "ua" ? "Проходжень:" : "Attempts:"}{" "}
+                  {tLabel("Проходжень:", "Attempts:")}{" "}
                   <span className="text-green-400 font-semibold">{t.count}</span>
                 </p>
               </motion.div>
@@ -221,66 +184,64 @@ export default function AdminAnalyticsPage() {
           </div>
         ) : (
           <p className="text-center text-gray-500 py-6 italic">
-            {lang === "ua" ? "Немає даних про тести" : "No test data available"}
+            {tLabel("Немає даних про тести", "No test data available")}
           </p>
         )}
       </div>
 
-      {}
+      {/* 👥 Топ користувачів */}
       <div className="bg-gray-900/70 p-6 rounded-2xl border border-gray-800 shadow-lg">
         <h3 className="text-lg md:text-xl text-green-400 font-semibold mb-5 flex items-center gap-2">
           <TrendingUp size={22} />
-          {lang === "ua" ? "Топ користувачів за оплатами" : "Top users by payments"}
+          {tLabel("Топ користувачів за оплатами", "Top users by payments")}
         </h3>
 
         {topUsers.length ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-gray-300 border-collapse rounded-xl overflow-hidden">
               <thead className="bg-green-900/10 text-green-400 border-b border-gray-700 uppercase text-xs tracking-wider">
-                <tr>
-                  <th className="text-left py-3 px-4 w-[60px]">#</th>
-                  <th className="text-left py-3 px-4">{lang === "ua" ? "Ім’я" : "Name"}</th>
-                  <th className="text-left py-3 px-4">Email</th>
-                  <th className="text-center py-3 px-4">{lang === "ua" ? "Оплат" : "Payments"}</th>
-                  <th className="text-center py-3 px-4">
-                    {lang === "ua" ? "Сума, USD" : "Total, USD"}
-                  </th>
-                </tr>
+              <tr>
+                <th className="text-left py-3 px-4 w-[60px]">#</th>
+                <th className="text-left py-3 px-4">{tLabel("Ім’я", "Name")}</th>
+                <th className="text-left py-3 px-4">Email</th>
+                <th className="text-center py-3 px-4">{tLabel("Оплат", "Payments")}</th>
+                <th className="text-center py-3 px-4">{tLabel("Сума, USD", "Total, USD")}</th>
+              </tr>
               </thead>
               <tbody>
-                {topUsers.map((u, i) => (
-                  <motion.tr
-                    key={u.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className={`border-b border-gray-800 hover:bg-gray-800/40 transition-all duration-200 ${
-                      i === 0
-                        ? "text-yellow-400 font-semibold bg-gradient-to-r from-yellow-900/10 via-yellow-800/10 to-transparent"
-                        : i === 1
-                          ? "text-gray-200"
-                          : i === 2
-                            ? "text-amber-600"
-                            : "text-gray-400"
-                    }`}
-                  >
-                    <td className="py-3 px-4 flex items-center gap-2 font-semibold">
-                      {i < 3 && <Trophy size={14} className="text-yellow-400" />}#{i + 1}
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">{u.name}</td>
-                    <td className="py-3 px-4 text-yellow-300">{u.email}</td>
-                    <td className="py-3 px-4 text-center font-semibold">{u.payments}</td>
-                    <td className="py-3 px-4 text-center font-bold text-green-400">
-                      ${Number(u.total_usd).toFixed(2)}
-                    </td>
-                  </motion.tr>
-                ))}
+              {topUsers.map((u, i) => (
+                <motion.tr
+                  key={u.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`border-b border-gray-800 hover:bg-gray-800/40 transition-all duration-200 ${
+                    i === 0
+                      ? "text-yellow-400 font-semibold bg-gradient-to-r from-yellow-900/10 via-yellow-800/10 to-transparent"
+                      : i === 1
+                        ? "text-gray-200"
+                        : i === 2
+                          ? "text-amber-600"
+                          : "text-gray-400"
+                  }`}
+                >
+                  <td className="py-3 px-4 flex items-center gap-2 font-semibold">
+                    {i < 3 && <Trophy size={14} className="text-yellow-400" />}#{i + 1}
+                  </td>
+                  <td className="py-3 px-4 whitespace-nowrap">{u.name}</td>
+                  <td className="py-3 px-4 text-yellow-300">{u.email}</td>
+                  <td className="py-3 px-4 text-center font-semibold">{u.payments}</td>
+                  <td className="py-3 px-4 text-center font-bold text-green-400">
+                    ${Number(u.total_usd).toFixed(2)}
+                  </td>
+                </motion.tr>
+              ))}
               </tbody>
             </table>
           </div>
         ) : (
           <p className="text-center text-gray-500 py-6 italic">
-            {lang === "ua" ? "Немає даних про користувачів" : "No user data available"}
+            {tLabel("Немає даних про користувачів", "No user data available")}
           </p>
         )}
       </div>
@@ -288,6 +249,7 @@ export default function AdminAnalyticsPage() {
   );
 }
 
+// ────────────────────────────────
 function ChartBox({ title, children }) {
   return (
     <motion.div
