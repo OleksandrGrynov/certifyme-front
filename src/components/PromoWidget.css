@@ -1,0 +1,77 @@
+/* 🌑 input field dark theme */
+.phone-input-dark {
+    width: 100% !important;
+    background-color: #1f2937 !important;
+    color: #fff !important;
+    border: 1px solid #374151 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px 10px 48px !important; /* ← додано лівий відступ для прапора */
+    font-size: 15px !important;
+    transition: all 0.3s ease;
+    height: 42px !important;
+    line-height: 22px !important;
+    box-sizing: border-box !important;
+}
+
+/* зелений glow при фокусі */
+.phone-input-dark:focus {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3) !important;
+    outline: none !important;
+}
+
+/* прапорець вирівнюємо вертикально */
+.react-tel-input .flag-dropdown {
+    background-color: #1f2937 !important;
+    border: none !important;
+    border-right: 1px solid #374151 !important;
+    border-radius: 8px 0 0 8px !important;
+    height: 42px !important;
+}
+
+.react-tel-input .selected-flag {
+    height: 42px !important;
+    padding: 0 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* прапорець — рівно по центру */
+.react-tel-input .selected-flag .flag {
+    transform: translateY(1px);
+}
+
+/* 🌙 dropdown theme */
+.phone-dropdown-dark {
+    background-color: #111827 !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    border: 1px solid #22c55e !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+    max-height: 240px !important;
+}
+
+.phone-dropdown-dark .country {
+    padding: 8px 10px !important;
+    transition: all 0.2s ease;
+}
+
+.phone-dropdown-dark .country:hover {
+    background-color: rgba(34, 197, 94, 0.15) !important;
+}
+
+/* підсвітка активної країни */
+.phone-dropdown-dark .country.highlight {
+    background-color: rgba(34, 197, 94, 0.25) !important;
+}
+
+/* скролбар красивіший */
+.phone-dropdown-dark::-webkit-scrollbar {
+    width: 6px;
+}
+
+.phone-dropdown-dark::-webkit-scrollbar-thumb {
+    background: #22c55e;
+    border-radius: 4px;
+}
