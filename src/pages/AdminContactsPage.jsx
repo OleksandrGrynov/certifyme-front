@@ -4,7 +4,9 @@ import { useTranslation } from "react-i18next";
 import ConfirmModal from "../components/ConfirmModal";
 
 export default function AdminContactsPage() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
+
   const [contacts, setContacts] = useState([]);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
@@ -13,9 +15,31 @@ export default function AdminContactsPage() {
   const audioRef = useRef(null);
 
   // confirm modal state
-  const [confirmState, setConfirmState] = useState({ open: false, title: t("confirmTitle") || "Підтвердження", message: "", confirmText: t("delete") || "Видалити", cancelText: t("cancel") || "Скасувати", resolve: null });
-  const confirmAsync = ({ title, message, confirmText, cancelText }) => new Promise((resolve) => setConfirmState({ open: true, title: title || confirmState.title, message: message || "", confirmText: confirmText || confirmState.confirmText, cancelText: cancelText || confirmState.cancelText, resolve }));
-  const closeConfirm = (result) => { if (confirmState.resolve) confirmState.resolve(result); setConfirmState((s) => ({ ...s, open: false })); };
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: tLabel("Підтвердження", "Confirmation"),
+    message: "",
+    confirmText: tLabel("Видалити", "Delete"),
+    cancelText: tLabel("Скасувати", "Cancel"),
+    resolve: null,
+  });
+
+  const confirmAsync = ({ title, message, confirmText, cancelText }) =>
+    new Promise((resolve) =>
+      setConfirmState({
+        open: true,
+        title: title || confirmState.title,
+        message: message || "",
+        confirmText: confirmText || confirmState.confirmText,
+        cancelText: cancelText || confirmState.cancelText,
+        resolve,
+      })
+    );
+
+  const closeConfirm = (result) => {
+    if (confirmState.resolve) confirmState.resolve(result);
+    setConfirmState((s) => ({ ...s, open: false }));
+  };
 
   const fetchContacts = useCallback(() => {
     fetch("http://localhost:5000/api/contacts")
@@ -56,7 +80,12 @@ export default function AdminContactsPage() {
   };
 
   const handleDelete = async (id) => {
-    const ok = await confirmAsync({ title: t("confirmTitle") || "Підтвердження", message: t("confirmDelete"), confirmText: t("delete") || "Видалити", cancelText: t("cancel") || "Скасувати" });
+    const ok = await confirmAsync({
+      title: tLabel("Підтвердження", "Confirmation"),
+      message: tLabel("Ви впевнені, що хочете видалити цю заявку?", "Are you sure you want to delete this request?"),
+      confirmText: tLabel("Видалити", "Delete"),
+      cancelText: tLabel("Скасувати", "Cancel"),
+    });
     if (!ok) return;
     await fetch(`http://localhost:5000/api/contacts/${id}`, { method: "DELETE" });
     setContacts((prev) => prev.filter((c) => c.id !== id));
@@ -71,7 +100,9 @@ export default function AdminContactsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setContacts((prev) => prev.map((c) => (c.id === id ? { ...c, status: newStatus } : c)));
+        setContacts((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, status: newStatus } : c))
+        );
       }
     } catch (err) {
       console.error("❌ Error updating status:", err);
@@ -94,33 +125,49 @@ export default function AdminContactsPage() {
     confirmed: filtered.filter((c) => c.status === "confirmed"),
   };
 
-  if (loading) return <p className="text-center text-gray-400">⌛ {t("loadingRequests")}</p>;
+  if (loading)
+    return (
+      <p className="text-center text-gray-400">
+        ⌛ {tLabel("Завантаження заявок...", "Loading requests...")}
+      </p>
+    );
 
   const getStatusBadge = (status) => {
     const common = "px-2 py-0.5 text-xs rounded-full";
     switch (status) {
       case "new":
-        return <span className={`${common} bg-blue-900/40 text-blue-400`}>🔵 {t("new")}</span>;
+        return (
+          <span className={`${common} bg-blue-900/40 text-blue-400`}>
+            🔵 {tLabel("Нова", "New")}
+          </span>
+        );
       case "in_progress":
         return (
-          <span className={`${common} bg-yellow-900/40 text-yellow-400`}>🟡 {t("inProgress")}</span>
+          <span className={`${common} bg-yellow-900/40 text-yellow-400`}>
+            🟡 {tLabel("В обробці", "In progress")}
+          </span>
         );
       case "confirmed":
         return (
-          <span className={`${common} bg-green-900/40 text-green-400`}>🟢 {t("confirmed")}</span>
+          <span className={`${common} bg-green-900/40 text-green-400`}>
+            🟢 {tLabel("Підтверджено", "Confirmed")}
+          </span>
         );
       default:
         return null;
     }
   };
 
-  const renderSection = (title, list, color) => (
+  const renderSection = (uaTitle, enTitle, list, color) => (
     <div className="mb-10">
       <h3 className={`text-lg font-semibold mb-3 ${color}`}>
-        {title} <span className="text-gray-400">({list.length})</span>
+        {tLabel(uaTitle, enTitle)}{" "}
+        <span className="text-gray-400">({list.length})</span>
       </h3>
       {list.length === 0 ? (
-        <p className="text-gray-500 text-sm italic">{t("noRequests")}</p>
+        <p className="text-gray-500 text-sm italic">
+          {tLabel("Немає заявок", "No requests")}
+        </p>
       ) : (
         <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((c) => (
@@ -144,9 +191,12 @@ export default function AdminContactsPage() {
                     {c.email}
                   </a>
                 </p>
-                <p className="flex items-center gap-2 text-gray-300 text.sm">
+                <p className="flex items-center gap-2 text-gray-300 text-sm">
                   <Phone size={14} className="text-pink-400" />
-                  <a href={`tel:${c.phone.replace(/\s/g, "")}`} className="hover:text-pink-300">
+                  <a
+                    href={`tel:${c.phone.replace(/\s/g, "")}`}
+                    className="hover:text-pink-300"
+                  >
                     {c.phone}
                   </a>
                 </p>
@@ -173,7 +223,7 @@ export default function AdminContactsPage() {
               <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-700">
                 <span className="text-xs text-gray-500">
                   {new Date(c.created_at).toLocaleString(
-                    i18n.language === "en" ? "en-US" : "uk-UA",
+                    i18n.language === "en" ? "en-US" : "uk-UA"
                   )}
                 </span>
 
@@ -183,7 +233,8 @@ export default function AdminContactsPage() {
                       onClick={() => handleStatusChange(c.id, "in_progress")}
                       className="bg-yellow-500 hover:bg-yellow-600 text-xs px-2 py-1 rounded text-black flex items-center gap-1"
                     >
-                      <Clock size={12} /> {t("setInProgress")}
+                      <Clock size={12} />{" "}
+                      {tLabel("В обробку", "Set in progress")}
                     </button>
                   )}
                   {c.status === "in_progress" && (
@@ -191,14 +242,15 @@ export default function AdminContactsPage() {
                       onClick={() => handleStatusChange(c.id, "confirmed")}
                       className="bg-green-500 hover:bg-green-600 text-xs px-2 py-1 rounded text-black flex items-center gap-1"
                     >
-                      <Check size={12} /> {t("confirm")}
+                      <Check size={12} />{" "}
+                      {tLabel("Підтвердити", "Confirm")}
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(c.id)}
                     className="bg-red-600 hover:bg-red-700 text-xs px-2 py-1 rounded flex items-center gap-1"
                   >
-                    <Trash size={12} /> {t("delete")}
+                    <Trash size={12} /> {tLabel("Видалити", "Delete")}
                   </button>
                 </div>
               </div>
@@ -215,7 +267,8 @@ export default function AdminContactsPage() {
 
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-green-400 flex items-center gap-2">
-          <MessageCircle size={22} /> {t("userRequests")}
+          <MessageCircle size={22} />{" "}
+          {tLabel("Заявки користувачів", "User Requests")}
           <span className="ml-2 bg-green-700/30 text-green-300 text-xs px-2 py-0.5 rounded-full">
             {contacts.length}
           </span>
@@ -224,14 +277,14 @@ export default function AdminContactsPage() {
         <input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder={t("searchRequests")}
+          placeholder={tLabel("Пошук заявок...", "Search requests...")}
           className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-gray-200 focus:ring-2 focus:ring-green-600"
         />
       </div>
 
-      {renderSection(t("newRequests"), grouped.new, "text-blue-400")}
-      {renderSection(t("inProgressRequests"), grouped.in_progress, "text-yellow-400")}
-      {renderSection(t("confirmedRequests"), grouped.confirmed, "text-green-400")}
+      {renderSection("Нові заявки", "New requests", grouped.new, "text-blue-400")}
+      {renderSection("В обробці", "In progress", grouped.in_progress, "text-yellow-400")}
+      {renderSection("Підтверджені", "Confirmed", grouped.confirmed, "text-green-400")}
 
       <ConfirmModal
         open={confirmState.open}
