@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-import toast from "react-hot-toast";
+import tToast from "../lib/tToast";
 
 export default function TestDetailsPage() {
   const { id } = useParams();
@@ -163,7 +164,7 @@ export default function TestDetailsPage() {
       })
       .finally(() => mounted && setLoading(false));
     return () => (mounted = false);
-  }, [id]);
+  }, [id, inferTagsLocal]);
 
   useEffect(() => {
     if (!token) return;
@@ -188,7 +189,7 @@ export default function TestDetailsPage() {
 
   const handleStartOrBuy = async () => {
     if (!token) {
-      toast.error(lang === "ua" ? "Спочатку увійдіть у профіль" : "Please sign in first");
+      tToast.error(lang === "ua" ? "Спочатку увійдіть у профіль" : "Please sign in first", lang === "ua" ? "Спочатку увійдіть у профіль" : "Please sign in first");
       return;
     }
 
@@ -212,13 +213,14 @@ export default function TestDetailsPage() {
         localStorage.setItem("lastPaidTestId", id);
         window.location.href = data.url;
       } else {
-        toast.error(
+        tToast.error(
+          data?.message || (lang === "ua" ? "Помилка створення оплати" : "Payment error"),
           data?.message || (lang === "ua" ? "Помилка створення оплати" : "Payment error"),
         );
       }
     } catch (err) {
       console.error(err);
-      toast.error(lang === "ua" ? "Помилка мережі" : "Network error");
+      tToast.error(lang === "ua" ? "Помилка мережі" : "Network error", lang === "ua" ? "Помилка мережі" : "Network error");
     } finally {
       setPaying(false);
     }
