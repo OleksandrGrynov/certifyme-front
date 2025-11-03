@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff, User, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import OtpVerifyModal from "./OtpVerifyModal";
 import toast from "react-hot-toast";
+import tToast from "../lib/tToast";
 
 export default function AuthModal({ isOpen, onClose }) {
     const { t } = useTranslation();
@@ -47,10 +48,12 @@ export default function AuthModal({ isOpen, onClose }) {
                 const data = await res.json();
 
                 if (res.ok) {
-                    toast.success(data.message || "✅ Реєстрація успішна");
+                    if (data.message) toast.success(data.message);
+                    else tToast.success("✅ Реєстрація успішна", "✅ Registration successful");
                     setShowOtpModal(true);
                 } else {
-                    toast.error(data.message || "❌ Помилка реєстрації");
+                    if (data.message) toast.error(data.message);
+                    else tToast.error("❌ Помилка реєстрації", "❌ Registration error");
                 }
             } else {
                 const res = await fetch("http://localhost:5000/api/users/login", {
@@ -67,7 +70,7 @@ export default function AuthModal({ isOpen, onClose }) {
                     window.location.reload();
                 } else toast.error(data.message || t("error_login"));
             }
-        } catch (err) {
+        } catch {
             toast.error(t("error_connection"));
         } finally {
             setLoading(false);
@@ -134,11 +137,17 @@ export default function AuthModal({ isOpen, onClose }) {
             });
             const data = await res.json();
             setResetMessage(data.message || "Перевірте пошту 💚");
-            if (res.ok) toast.success(data.message || "📩 Лист надіслано");
-            else toast.error(data.message || "❌ Помилка відправки");
+            if (res.ok) {
+                if (data.message) toast.success(data.message);
+                else tToast.success("📩 Лист надіслано", "📩 Email sent");
+            } else {
+                if (data.message) toast.error(data.message);
+                else tToast.error("❌ Помилка відправки", "❌ Send failed");
+            }
         } catch {
-            setResetMessage("❌ Помилка з'єднання з сервером");
-            toast.error("❌ Помилка з'єднання з сервером");
+            const msgUa = "❌ Помилка з'єднання з сервером";
+            setResetMessage(msgUa);
+            tToast.error(msgUa, "❌ Server connection error");
         } finally {
             setSending(false);
         }
