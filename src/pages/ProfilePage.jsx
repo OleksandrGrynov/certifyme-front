@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, User, Save, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
+import tToast from "../lib/tToast";
 
 const successSound = new Audio("/success.mp3");
 const errorSound = new Audio("/error.mp3");
@@ -70,7 +71,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem("token");
       if (!newData.first_name || !newData.last_name || !newData.email) {
         warningSound.play();
-        toast.error("⚠️ Заповніть усі поля!");
+        tToast.error("⚠️ Заповніть усі поля!", "⚠️ Please fill in all fields!");
         return;
       }
 
@@ -93,15 +94,15 @@ export default function ProfilePage() {
         });
         setIsEditing(false);
         successSound.play();
-        toast.success("✅ Дані успішно оновлено");
+        tToast.success("✅ Дані успішно оновлено", "✅ Data updated successfully");
       } else {
         errorSound.play();
-        toast.error("❌ " + data.message);
+        tToast.error("❌ " + data.message, "❌ " + (data.message || "Update error"));
       }
     } catch (err) {
       console.error("Помилка при оновленні:", err);
       errorSound.play();
-      toast.error("❌ Помилка при оновленні");
+      tToast.error("❌ Помилка при оновленні", "❌ Update error");
     }
   };
 
@@ -130,17 +131,20 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.success) {
         successSound.play();
-        toast.success("✅ Пароль успішно змінено! Ми надіслали лист-підтвердження на вашу пошту.");
+        tToast.success(
+          "✅ Пароль успішно змінено! Ми надіслали лист-підтвердження на вашу пошту.",
+          "✅ Password changed! We've sent a confirmation email.",
+        );
         setPasswords({ old: "", new: "", confirm: "" });
         setShowPasswordForm(false);
       } else {
         errorSound.play();
-        toast.error("❌ " + (data.message || "Помилка зміни пароля"));
+        tToast.error("❌ " + (data.message || "Помилка зміни пароля"), "❌ " + (data.message || "Password change error"));
       }
     } catch (err) {
       console.error(err);
       errorSound.play();
-      toast.error("❌ Помилка сервера при зміні пароля");
+      tToast.error("❌ Помилка сервера при зміні пароля", "❌ Server error while changing password");
     }
   };
 
@@ -154,15 +158,18 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.success) {
         successSound.play();
-        toast.success("📩 Ми надіслали лист із інструкцією для зміни пароля!");
+        tToast.success(
+          "📩 Ми надіслали лист із інструкцією для зміни пароля!",
+          "📩 We've sent instructions to change your password!",
+        );
       } else {
         errorSound.play();
-        toast.error("❌ " + (data.message || "Помилка при надсиланні листа"));
+        tToast.error("❌ " + (data.message || "Помилка при надсиланні листа"), "❌ " + (data.message || "Failed to send email"));
       }
     } catch (err) {
       console.error(err);
       errorSound.play();
-      toast.error("❌ Не вдалося надіслати лист");
+      tToast.error("❌ Не вдалося надіслати лист", "❌ Failed to send email");
     }
   };
 
