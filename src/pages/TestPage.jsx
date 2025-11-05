@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
 import tToast from "../lib/tToast";
+import { API_URL } from "../lib/apiClient";
 
 export default function TestPage() {
   const { id } = useParams();
@@ -57,7 +58,7 @@ export default function TestPage() {
 
   // Завантаження тесту
   useEffect(() => {
-    fetch(`http://localhost:5000/api/tests/${id}`)
+    fetch(`${API_URL}/api/tests/${id}`)
       .then((r) => r.json())
       .then((data) => data.success && setTest(data.test))
       .catch((err) => console.error("❌ Помилка завантаження тесту:", err));
@@ -97,7 +98,7 @@ export default function TestPage() {
       const user = jwtDecode(token);
       const userId = user?.id || user?.user_id || user?.email || "guest";
 
-      const res = await fetch("http://localhost:5000/api/achievements/unlock", {
+      const res = await fetch(`${API_URL}/api/achievements/unlock`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -157,7 +158,7 @@ export default function TestPage() {
       if (!token) return;
 
       // ✅ Збереження результату тесту на бекенді
-      const res = await fetch("http://localhost:5000/api/tests/record", {
+      const res = await fetch(`${API_URL}/api/tests/record`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -209,7 +210,7 @@ export default function TestPage() {
     )?.answer_ua;
 
     try {
-      const res = await fetch("http://localhost:5000/api/tests/explain-one", {
+      const res = await fetch(`${API_URL}/api/tests/explain-one`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -248,7 +249,7 @@ export default function TestPage() {
           "Please sign in first!"
         );
 
-      const res = await fetch("http://localhost:5000/api/tests/certificate", {
+      const res = await fetch(`${API_URL}/api/tests/certificate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
+import { API_URL } from "../lib/apiClient";
 
 export default function AdminCertificatesPage() {
     const [certificates, setCertificates] = useState([]);
@@ -57,7 +58,7 @@ export default function AdminCertificatesPage() {
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(
-              `http://localhost:5000/api/admin/certificates?lang=${lang}`,
+              `${API_URL}/api/admin/certificates?lang=${lang}`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             const data = await res.json();
@@ -115,7 +116,7 @@ export default function AdminCertificatesPage() {
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(
-              `http://localhost:5000/api/admin/certificates/${id}`,
+              `${API_URL}/api/admin/certificates/${id}`,
               {
                   method: "DELETE",
                   headers: { Authorization: `Bearer ${token}` },
@@ -154,7 +155,7 @@ export default function AdminCertificatesPage() {
         const token = localStorage.getItem("token");
 
         try {
-            const res = await fetch(`http://localhost:5000/api/certificates/${id}`, {
+            const res = await fetch(`${API_URL}/api/certificates/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

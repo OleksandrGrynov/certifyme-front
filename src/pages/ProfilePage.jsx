@@ -4,6 +4,7 @@ import { LogOut, User, Save, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
+import { API_URL } from "../lib/apiClient";
 
 const successSound = new Audio("/success.mp3");
 const errorSound = new Audio("/error.mp3");
@@ -36,7 +37,7 @@ export default function ProfilePage() {
       return;
     }
 
-    fetch("http://localhost:5000/api/users/me", {
+    fetch(`${API_URL}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -82,7 +83,7 @@ export default function ProfilePage() {
         return;
       }
 
-      const res = await fetch("http://localhost:5000/api/users/update", {
+      const res = await fetch(`${API_URL}/api/users/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -123,7 +124,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/users/password", {
+      const res = await fetch(`${API_URL}/api/users/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -157,7 +158,7 @@ export default function ProfilePage() {
 
   const handleForgotPassword = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/users/forgot-password", {
+      const res = await fetch(`${API_URL}/api/users/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email }),

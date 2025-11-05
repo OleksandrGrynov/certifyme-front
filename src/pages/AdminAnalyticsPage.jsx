@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { API_URL } from "../lib/apiClient";
 
 export default function AdminAnalyticsPage() {
   const { i18n } = useTranslation();
@@ -41,11 +42,11 @@ export default function AdminAnalyticsPage() {
     const headers = { Authorization: `Bearer ${token}` };
 
     const [o, u, p, t, us] = await Promise.all([
-      fetch(`http://localhost:5000/api/admin/analytics/overview?lang=${lang}`, { headers }).then((r) => r.json()),
-      fetch(`http://localhost:5000/api/admin/analytics/daily-users?days=${days}&lang=${lang}`, { headers }).then((r) => r.json()),
-      fetch(`http://localhost:5000/api/admin/analytics/payments-daily?days=${days}&lang=${lang}`, { headers }).then((r) => r.json()),
-      fetch(`http://localhost:5000/api/admin/analytics/top-tests?lang=${lang}`, { headers }).then((r) => r.json()),
-      fetch(`http://localhost:5000/api/admin/analytics/top-users?lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`${API_URL}/api/admin/analytics/overview?lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`${API_URL}/api/admin/analytics/daily-users?days=${days}&lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`${API_URL}/api/admin/analytics/payments-daily?days=${days}&lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`${API_URL}/api/admin/analytics/top-tests?lang=${lang}`, { headers }).then((r) => r.json()),
+      fetch(`${API_URL}/api/admin/analytics/top-users?lang=${lang}`, { headers }).then((r) => r.json()),
     ]);
 
     if (o.success) setOverview(o.data);

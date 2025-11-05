@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import OtpVerifyModal from "./OtpVerifyModal";
 import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
+import { API_URL } from "../lib/apiClient";
 
 export default function AuthModal({ isOpen, onClose }) {
     const { t } = useTranslation();
@@ -40,7 +41,7 @@ export default function AuthModal({ isOpen, onClose }) {
 
         try {
             if (isRegister) {
-                const res = await fetch("http://localhost:5000/api/users/register", {
+                const res = await fetch(`${API_URL}/api/users/register`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData),
@@ -56,7 +57,7 @@ export default function AuthModal({ isOpen, onClose }) {
                     else tToast.error("❌ Помилка реєстрації", "❌ Registration error");
                 }
             } else {
-                const res = await fetch("http://localhost:5000/api/users/login", {
+                const res = await fetch(`${API_URL}/api/users/login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData),
@@ -80,7 +81,7 @@ export default function AuthModal({ isOpen, onClose }) {
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
             const token = credentialResponse.credential;
-            const res = await fetch("http://localhost:5000/api/auth/google-token", {
+            const res = await fetch(`${API_URL}/api/auth/google-token`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token }),
@@ -105,7 +106,7 @@ export default function AuthModal({ isOpen, onClose }) {
 
     const handleSetPassword = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/users/set-password", {
+            const res = await fetch(`${API_URL}/api/users/set-password`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -132,7 +133,7 @@ export default function AuthModal({ isOpen, onClose }) {
         setResetMessage("");
 
         try {
-            const res = await fetch("http://localhost:5000/api/users/forgot-password", {
+            const res = await fetch(`${API_URL}/api/users/forgot-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: resetEmail }),

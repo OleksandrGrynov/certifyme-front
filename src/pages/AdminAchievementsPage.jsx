@@ -3,6 +3,7 @@ import { Plus, Edit3, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ConfirmModal from "../components/ConfirmModal";
 import tToast from "../lib/tToast";
+import { API_URL } from "../lib/apiClient";
 
 export default function AdminAchievementsPage() {
     const { i18n } = useTranslation();
@@ -48,7 +49,7 @@ export default function AdminAchievementsPage() {
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(
-              `http://localhost:5000/api/admin/achievements`,
+              `${API_URL}/api/admin/achievements`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -68,8 +69,8 @@ export default function AdminAchievementsPage() {
         const token = localStorage.getItem("token");
         const method = editing ? "PUT" : "POST";
         const url = editing
-          ? `http://localhost:5000/api/admin/achievements/${editing.id}`
-          : "http://localhost:5000/api/admin/achievements";
+          ? `${API_URL}/api/admin/achievements/${editing.id}`
+          : `${API_URL}/api/admin/achievements`;
 
         try {
             const res = await fetch(url, {
@@ -128,7 +129,7 @@ export default function AdminAchievementsPage() {
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(
-              `http://localhost:5000/api/admin/achievements/${id}`,
+              `${API_URL}/api/admin/achievements/${id}`,
               {
                   method: "DELETE",
                   headers: { Authorization: `Bearer ${token}` },

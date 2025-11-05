@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import AuthModal from "../components/AuthModal";
 import toast from "react-hot-toast";
+import { API_URL } from "../lib/apiClient";
 
 export default function MyCertificates() {
   const { i18n } = useTranslation();
@@ -25,7 +26,7 @@ export default function MyCertificates() {
       }
 
       try {
-        const res = await fetch("http://localhost:5000/api/tests/user/certificates", {
+        const res = await fetch(`${API_URL}/api/tests/user/certificates`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -41,8 +42,8 @@ export default function MyCertificates() {
 
   const ensureCertificateAvailable = async (certId, timeoutMs = 15000) => {
     const token = localStorage.getItem("token");
-    const fileUrl = `http://localhost:5000/certificates/certificate_${certId}.pdf`;
-    const regenUrl = `http://localhost:5000/api/certificates/${certId}`;
+    const fileUrl = `${API_URL}/certificates/certificate_${certId}.pdf`;
+    const regenUrl = `${API_URL}/api/certificates/${certId}`;
 
     try {
       const firstTry = await fetch(fileUrl, { method: "GET" });

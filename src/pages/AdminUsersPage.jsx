@@ -3,6 +3,7 @@ import { Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
+import { API_URL } from "../lib/apiClient";
 
 export default function AdminUsersPage() {
     const { i18n } = useTranslation();
@@ -42,7 +43,7 @@ export default function AdminUsersPage() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        fetch("http://localhost:5000/api/admin/users", {
+        fetch(`${API_URL}/api/admin/users`, {
             headers: { Authorization: `Bearer ${token}` },
         })
           .then((r) => r.json())
@@ -66,7 +67,7 @@ export default function AdminUsersPage() {
         if (!ok) return;
 
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
+        const res = await fetch(`${API_URL}/api/admin/users/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
         });
@@ -83,7 +84,7 @@ export default function AdminUsersPage() {
     // 🔁 Зміна ролі користувача
     const handleChangeRole = async (id, newRole) => {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
+        const res = await fetch(`${API_URL}/api/admin/users/${id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

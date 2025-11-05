@@ -5,7 +5,7 @@ import "react-phone-input-2/lib/style.css";
 import PhoneInput from "react-phone-input-2";
 import toast from "react-hot-toast";
 import "./PromoWidget.css";
-
+import { API_URL } from "../lib/apiClient";
 export default function PromoSubscriptionWidget() {
   const [visible, setVisible] = useState(false);
   const [phone, setPhone] = useState("");
@@ -32,7 +32,7 @@ export default function PromoSubscriptionWidget() {
 
     if (dismissed === "true" || subscribed === "true") return;
 
-    fetch("http://localhost:5000/api/sms/check", {
+    fetch(`${API_URL}/api/sms/check`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -130,7 +130,7 @@ export default function PromoSubscriptionWidget() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5000/api/sms/subscribe", {
+      const res = await fetch(`${API_URL}/api/sms/subscribe`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

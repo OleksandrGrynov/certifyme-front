@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { API_URL } from "../lib/apiClient";
 
 export default function TestResultDetails() {
   const { id } = useParams();
@@ -24,7 +25,7 @@ export default function TestResultDetails() {
         }
 
         const res = await fetch(
-          `http://localhost:5000/api/tests/result/${id}`,
+          `${API_URL}/api/tests/result/${id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 

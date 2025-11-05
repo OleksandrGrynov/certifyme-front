@@ -1,6 +1,7 @@
 // src/lib/useAchievementUnlock.js
 import toast from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
+import { API_URL } from "./apiClient";
 
 /**
  * Глобальне розблокування аудіо після першої взаємодії користувача.
@@ -38,7 +39,7 @@ function ensureAudioUnlockedOnce() {
  */
 function playUnlockSound() {
   if (!audioUnlocked) return; // уникнути помилки autoplay
-  const audio = new Audio("/unlock.mp3");
+  const audio = new Audio("/public/unlock.mp3");
   audio.volume = 0.8;
   audio.currentTime = 0;
   audio.play().catch(() => {});
@@ -56,7 +57,7 @@ export function useAchievementUnlock(lang = "ua") {
     ensureAudioUnlockedOnce();
   }
 
-  const api = "http://localhost:5000"; // лишаю як у твоєму коді для узгодженості
+  const api = `${API_URL}`;
 
   const unlock = async (code, { dedupePerUser = true } = {}) => {
     try {

@@ -8,6 +8,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { API_URL } from "../lib/apiClient";
 
 export default function AdminTestsPage() {
   const { i18n } = useTranslation();
@@ -24,7 +25,7 @@ export default function AdminTestsPage() {
   const loadTests = async () => {
     try {
       const lang = i18n.language || "ua";
-      const res = await fetch(`http://localhost:5000/api/tests?lang=${lang}`);
+      const res = await fetch(`${API_URL}/api/tests?lang=${lang}`);
       const data = await res.json();
       if (data.success) setTests(data.tests || []);
     } catch (err) {
@@ -49,7 +50,7 @@ export default function AdminTestsPage() {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/tests/${testToDelete.id}`,
+        `${API_URL}/api/tests/${testToDelete.id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

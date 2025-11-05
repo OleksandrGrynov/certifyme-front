@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Save, Trash, Plus, Settings2, X, CheckCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-
+import { API_URL } from "../lib/apiClient.js";
 export default function AdminEditTestPage() {
   const { id } = useParams();
   const { t, i18n } = useTranslation();
@@ -18,7 +18,7 @@ export default function AdminEditTestPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/tests/${id}`);
+        const res = await fetch(`${API_URL}/api/tests/${id}`);
         const data = await res.json();
         if (data.success) {
           setEditingTest({
@@ -104,7 +104,7 @@ export default function AdminEditTestPage() {
   const handleSave = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/tests/${editingTest.id}`, {
+      const res = await fetch(`${API_URL}/api/tests/${editingTest.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

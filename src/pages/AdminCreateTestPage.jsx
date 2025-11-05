@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Save, Trash, Settings2, X, CheckCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
+import { API_URL } from "../lib/apiClient";
 export default function AdminCreateTestPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -118,7 +118,7 @@ export default function AdminCreateTestPage() {
   const handleSave = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/tests", {
+      const res = await fetch(`${API_URL}/api/tests`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

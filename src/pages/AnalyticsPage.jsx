@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchWithAuth } from "../lib/apiClient";
 import { motion } from "framer-motion";
+import { API_URL } from "../lib/apiClient";
 
 export default function AnalyticsPage() {
   const { i18n } = useTranslation();
@@ -28,10 +29,10 @@ export default function AnalyticsPage() {
     setIsPublicView(false);
     try {
       const [ovR, dailyR, topR, recentR] = await Promise.all([
-        fetchWithAuth("http://localhost:5000/api/analytics/user/overview"),
-        fetchWithAuth("http://localhost:5000/api/analytics/user/daily?days=30"),
-        fetchWithAuth("http://localhost:5000/api/analytics/user/top-courses?limit=10"),
-        fetchWithAuth("http://localhost:5000/api/analytics/user/recent?limit=20"),
+        fetchWithAuth(`/api/analytics/user/overview`),
+        fetchWithAuth(`/api/analytics/user/daily?days=30`),
+        fetchWithAuth(`/api/analytics/user/top-courses?limit=10`),
+        fetchWithAuth(`/api/analytics/user/recent?limit=20`),
       ]);
 
       if (!ovR.ok || !dailyR.ok || !topR.ok || !recentR.ok) {

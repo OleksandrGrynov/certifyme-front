@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { API_URL } from "../lib/apiClient";
 
 import LiquidEther from "../components/LiquidEther";
 import "../components/LiquidEther.css";
@@ -179,7 +180,7 @@ export default function HomePage() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/user/tests/check/${tst.id}`, {
+      const res = await fetch(`${API_URL}/api/user/tests/check/${tst.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -203,8 +204,8 @@ export default function HomePage() {
     const fetchStats = async () => {
       try {
         const urls = [
-          "http://localhost:5000/api/analytics/public/overview",
-          "http://localhost:5000/api/public/stats",
+          `${API_URL}/api/analytics/public/overview`,
+          `${API_URL}/api/public/stats`,
         ];
 
         for (const url of urls) {
@@ -229,7 +230,7 @@ export default function HomePage() {
     const fetchTests = async () => {
       try {
         setLoadingTests(true);
-        const res = await fetch(`http://localhost:5000/api/tests?lang=${lang}`);
+        const res = await fetch(`${API_URL}/api/tests?lang=${lang}`);
         const json = res.ok ? await res.json() : { tests: [] };
         const arr = json.tests || [];
         const top = [...arr]

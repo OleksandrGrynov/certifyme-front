@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Trash, MessageCircle, Mail, Phone, Send, Check, Clock, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ConfirmModal from "../components/ConfirmModal";
+import { API_URL } from "../lib/apiClient";
 
 export default function AdminContactsPage() {
   const { i18n } = useTranslation();
@@ -42,7 +43,7 @@ export default function AdminContactsPage() {
   };
 
   const fetchContacts = useCallback(() => {
-    fetch("http://localhost:5000/api/contacts")
+    fetch(`${API_URL}/api/contacts`)
       .then((r) => r.json())
       .then((data) => {
         if (!Array.isArray(data)) return;
@@ -87,13 +88,13 @@ export default function AdminContactsPage() {
       cancelText: tLabel("Скасувати", "Cancel"),
     });
     if (!ok) return;
-    await fetch(`http://localhost:5000/api/contacts/${id}`, { method: "DELETE" });
+    await fetch(`${API_URL}/api/contacts/${id}`, { method: "DELETE" });
     setContacts((prev) => prev.filter((c) => c.id !== id));
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/contacts/${id}/status`, {
+      const res = await fetch(`${API_URL}/api/contacts/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

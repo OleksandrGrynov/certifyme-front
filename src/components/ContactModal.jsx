@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
+import { API_URL } from "../lib/apiClient";
 
 export default function ContactModal({ isOpen, onClose }) {
     const { t } = useTranslation();
@@ -69,7 +70,7 @@ export default function ContactModal({ isOpen, onClose }) {
         }
 
         try {
-            const response = await fetch("http://localhost:5000/api/contacts", {
+            const response = await fetch(`${API_URL}/api/contacts`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),

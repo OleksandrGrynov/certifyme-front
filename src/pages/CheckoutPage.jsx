@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import tToast from "../lib/tToast";
+import { API_URL } from "../lib/apiClient";
 
 export default function CheckoutPage() {
   const { id } = useParams();
@@ -21,7 +22,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const loadTest = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/tests/${id}`);
+        const res = await fetch(`${API_URL}/api/tests/${id}`);
         const data = await res.json();
         if (data.success && data.test) setTest(data.test);
         else setError(i18n.language === "ua" ? "Тест не знайдено" : "Test not found");
@@ -60,7 +61,7 @@ export default function CheckoutPage() {
 
       // 🟢 Безкоштовний тест
       if (!test.price_cents && !test.price_uah) {
-        const res = await fetch("http://localhost:5000/api/user/tests/grant", {
+        const res = await fetch(`${API_URL}/api/user/tests/grant`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -84,7 +85,7 @@ export default function CheckoutPage() {
       }
 
       // 💳 Створюємо Stripe checkout session
-      const res = await fetch("http://localhost:5000/api/payments/checkout", {
+      const res = await fetch(`${API_URL}/api/payments/checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

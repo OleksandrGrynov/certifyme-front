@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import tToast from "../lib/tToast";
 import { motion } from "framer-motion";
+import { API_URL } from "../lib/apiClient";
 
 export default function TestDetailsPage() {
   const { id } = useParams();
@@ -115,7 +116,7 @@ export default function TestDetailsPage() {
         const lastPaidTestId = localStorage.getItem("lastPaidTestId");
         if (!token || !lastPaidTestId) return;
 
-        const res = await fetch("http://localhost:5000/api/user/tests/grant", {
+        const res = await fetch(`${API_URL}/api/user/tests/grant`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -140,7 +141,7 @@ export default function TestDetailsPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetch(`http://localhost:5000/api/tests/${id}`)
+    fetch(`${API_URL}/api/tests/${id}`)
       .then((r) => r.json())
       .then((data) => {
         if (!mounted) return;
@@ -170,7 +171,7 @@ export default function TestDetailsPage() {
     const checkAccess = async () => {
       setCheckingAccess(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/user/tests/check/${id}`, {
+        const res = await fetch(`${API_URL}/api/user/tests/check/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -199,7 +200,7 @@ export default function TestDetailsPage() {
 
     try {
       setPaying(true);
-      const res = await fetch("http://localhost:5000/api/payments/checkout", {
+      const res = await fetch(`${API_URL}/api/payments/checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

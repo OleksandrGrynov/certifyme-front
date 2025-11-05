@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { API_URL } from "../lib/apiClient";
 
 export default function OtpVerifyModal({ email, onSuccess, onClose }) {
   const { i18n } = useTranslation();
@@ -40,7 +41,7 @@ export default function OtpVerifyModal({ email, onSuccess, onClose }) {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/users/verify-otp", {
+      const res = await fetch(`${API_URL}/api/users/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),

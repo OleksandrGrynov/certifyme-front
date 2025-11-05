@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import tToast, { tLabel } from "../lib/tToast";
+import { API_URL } from "../lib/apiClient";
 
 export default function TestsPage() {
   const { i18n } = useTranslation();
@@ -22,11 +23,11 @@ export default function TestsPage() {
   const loadTests = useCallback(async () => {
     try {
       setLoading(true);
-      const testsRes = await fetch(`http://localhost:5000/api/tests?lang=${i18n.language}`);
+      const testsRes = await fetch(`${API_URL}/api/tests?lang=${i18n.language}`);
       const testsJson = await testsRes.json();
       setTests(testsJson?.tests || []);
 
-      const ownedRes = await fetch("http://localhost:5000/api/user/tests", {
+      const ownedRes = await fetch(`${API_URL}/api/user/tests`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const ownedJson = ownedRes.ok ? await ownedRes.json() : { testIds: [] };
@@ -43,7 +44,7 @@ export default function TestsPage() {
   const loadPassedTests = useCallback(async () => {
     try {
       if (!token) return;
-      const res = await fetch("http://localhost:5000/api/tests/user/passed", {
+      const res = await fetch(`${API_URL}/api/tests/user/passed`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -85,7 +86,7 @@ export default function TestsPage() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch("http://localhost:5000/api/payments/confirm-local", {
+        const res = await fetch(`${API_URL}/api/payments/confirm-local`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -104,7 +105,7 @@ export default function TestsPage() {
           );
 
           if (data.unlocked?.length > 0) {
-            const sound = new Audio("/sounds/unlock.mp3");
+            const sound = new Audio("/public/unlock.mp3");
             sound.volume = 0.5;
             sound.play().catch(() => {});
             for (const ach of data.unlocked) {
@@ -168,7 +169,7 @@ export default function TestsPage() {
     try {
       setBuyingId(testId);
 
-      const res = await fetch("http://localhost:5000/api/payments/checkout", {
+      const res = await fetch(`${API_URL}/api/payments/checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -357,7 +358,7 @@ export default function TestsPage() {
                         onClick={async () => {
                           try {
                             const res = await fetch(
-                              `http://localhost:5000/api/user/tests/check/${test.id}`,
+                              `${API_URL}/api/user/tests/check/${test.id}`,
                               {
                                 headers: { Authorization: `Bearer ${token}` },
                               }

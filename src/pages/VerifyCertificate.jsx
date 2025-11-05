@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { API_URL } from "../lib/apiClient";
 
 export default function VerifyCertificate() {
   const { t, i18n } = useTranslation();
@@ -12,7 +13,7 @@ export default function VerifyCertificate() {
   useEffect(() => {
     const loadCert = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/tests/certificates/${cert_id}`);
+        const res = await fetch(`${API_URL}/api/tests/certificates/${cert_id}`);
         const data = await res.json();
         setCert(data);
       } catch (err) {

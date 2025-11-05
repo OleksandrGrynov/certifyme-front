@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast, { Toaster } from "react-hot-toast";
+import { API_URL } from "../lib/apiClient";
 
 export default function AdminSettingsPage() {
   const { i18n } = useTranslation();
@@ -32,7 +33,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/api/settings/system", {
+    fetch(`${API_URL}/api/settings/system`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -44,7 +45,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/api/settings/insights", {
+    fetch(`${API_URL}/api/settings/insights`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -56,7 +57,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/api/sms/count", {
+    fetch(`${API_URL}/api/sms/count`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -70,7 +71,7 @@ export default function AdminSettingsPage() {
     if (!token) return toast.error("🔒 Авторизуйтесь як адмін");
     try {
       toast.loading("⏳ Створення резервної копії...");
-      const res = await fetch("http://localhost:5000/api/settings/backup", {
+      const res = await fetch(`${API_URL}/api/settings/backup`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -92,7 +93,7 @@ export default function AdminSettingsPage() {
     if (!token) return toast.error("🔒 Авторизуйтесь");
     setSending(true);
     try {
-      const res = await fetch("http://localhost:5000/api/sms/send-promo", {
+      const res = await fetch(`${API_URL}/api/sms/send-promo`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
