@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Phone, Send } from "lucide-react";
 import "react-phone-input-2/lib/style.css";
 import PhoneInput from "react-phone-input-2";
-import toast from "react-hot-toast"; // ✅
+import toast from "react-hot-toast";
 import "./PromoWidget.css";
 
 export default function PromoSubscriptionWidget() {
@@ -11,35 +11,39 @@ export default function PromoSubscriptionWidget() {
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [neverShow, setNeverShow] = useState(false);
-  const [confirmNeverShow, setConfirmNeverShow] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState({ x: 40, y: 250 });
+
   const offset = useRef({ x: 0, y: 0 });
   const showTimeout = useRef(null);
   const interval = useRef(null);
+  const inactivityTimer = useRef(null);
 
-  // 🧩 1. Перевірка токену і статусу підписки
+  /* ======================================================
+     🧩 1. Перевірка токену і статусу підписки
+     ====================================================== */
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return; // ❌ не авторизованим не показуємо
+    if (!token) return;
 
-    const subscribed = localStorage.getItem("promoWidgetSubscribed");
-    const dismissed = localStorage.getItem("promoWidgetNeverShow");
-    if (subscribed || dismissed) return;
+    const keyBase = `promoWidget_${token.slice(0, 16)}`;
+    const subscribed = localStorage.getItem(`${keyBase}_subscribed`);
+    const dismissed = localStorage.getItem(`${keyBase}_neverShow`);
 
-    // 🔹 Перевірка через бекенд
+    if (dismissed === "true" || subscribed === "true") return;
+
     fetch("http://localhost:5000/api/sms/check", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => {
         if (data.subscribed) {
-          localStorage.setItem("promoWidgetSubscribed", "true");
+          localStorage.setItem(`${keyBase}_subscribed`, "true");
         } else {
           showTimeout.current = setTimeout(() => setVisible(true), 2000);
           interval.current = setInterval(() => {
-            const againDismissed = localStorage.getItem("promoWidgetNeverShow");
-            const againSub = localStorage.getItem("promoWidgetSubscribed");
+            const againDismissed = localStorage.getItem(`${keyBase}_neverShow`);
+            const againSub = localStorage.getItem(`${keyBase}_subscribed`);
             if (!againDismissed && !againSub) setVisible(true);
           }, 7 * 60 * 1000);
         }
@@ -52,7 +56,42 @@ export default function PromoSubscriptionWidget() {
     };
   }, []);
 
-  // 🖱️ draggable
+  /* ======================================================
+     ⏱️ 2. Автоматичне приховування після 10 секунд без дій
+     ====================================================== */
+  const resetInactivityTimer = () => {
+    clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(() => {
+      if (visible) {
+        setVisible(false);
+        toast("💤 Вікно приховано через неактивність", {
+          duration: 3000,
+          style: {
+            background: "#111827",
+            border: "1px solid #22c55e",
+            borderRadius: "12px",
+            color: "#f9fafb",
+          },
+        });
+      }
+    }, 10000); // 10 секунд
+  };
+
+  useEffect(() => {
+    if (!visible) return;
+    resetInactivityTimer();
+    const events = ["mousemove", "keydown", "click", "scroll"];
+    const resetAll = () => resetInactivityTimer();
+    events.forEach((ev) => window.addEventListener(ev, resetAll));
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, resetAll));
+      clearTimeout(inactivityTimer.current);
+    };
+  }, [visible]);
+
+  /* ======================================================
+     🖱️ 3. Перетягування (draggable)
+     ====================================================== */
   const handleMouseDown = (e) => {
     if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
     setDragging(true);
@@ -63,6 +102,7 @@ export default function PromoSubscriptionWidget() {
     setPos({ x: e.clientX - offset.current.x, y: e.clientY - offset.current.y });
   };
   const handleMouseUp = () => setDragging(false);
+
   useEffect(() => {
     if (dragging) {
       window.addEventListener("mousemove", handleMouseMove);
@@ -77,12 +117,16 @@ export default function PromoSubscriptionWidget() {
     };
   }, [dragging]);
 
-  // 📲 2. Підписка
+  /* ======================================================
+     📲 4. Підписка на SMS
+     ====================================================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!phone.trim()) return toast.error("📱 Введіть номер телефону!");
+
     const token = localStorage.getItem("token");
     if (!token) return toast.error("❌ Спочатку увійди в акаунт!");
+    const keyBase = `promoWidget_${token.slice(0, 16)}`;
 
     setSubmitting(true);
     try {
@@ -94,28 +138,71 @@ export default function PromoSubscriptionWidget() {
         },
         body: JSON.stringify({ phone }),
       });
-
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("promoWidgetSubscribed", "true");
+        localStorage.setItem(`${keyBase}_subscribed`, "true");
         setVisible(false);
         toast.success("✅ Ви підписались на SMS-сповіщення!");
-      } else {
-        toast.error("⚠️ " + (data.message || "Помилка підписки"));
-      }
-    } catch (err) {
-      console.error("❌ Помилка підписки:", err);
+      } else toast.error("⚠️ " + (data.message || "Помилка підписки"));
+    } catch {
       toast.error("⚠️ Сервер недоступний");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ❌ підтвердження для "більше не показувати"
+  /* ======================================================
+     ❌ 5. Закриття вікна з підтвердженням
+     ====================================================== */
+  const handleCloseClick = () => {
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-gray-100">
+            Ви впевнені, що хочете закрити це вікно?
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="text-gray-400 hover:text-gray-200 text-sm"
+            >
+              Ні
+            </button>
+            <button
+              onClick={() => {
+                setVisible(false);
+                toast.dismiss(t.id);
+                toast.success("🔕 Вікно закрито. Воно може з’явитися знову пізніше.");
+              }}
+              className="text-red-400 hover:text-red-300 text-sm"
+            >
+              Так, закрити
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 7000,
+        style: {
+          background: "#111827",
+          border: "1px solid #22c55e",
+          borderRadius: "12px",
+          color: "#f9fafb",
+        },
+      }
+    );
+  };
+
+  /* ======================================================
+     🚫 6. Галочка "Більше не показувати"
+     ====================================================== */
   const handleNeverShow = () => {
-    if (!confirmNeverShow) {
-      setConfirmNeverShow(true);
-      toast((t) => (
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const keyBase = `promoWidget_${token.slice(0, 16)}`;
+
+    toast(
+      (t) => (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-gray-100">
             Ви впевнені, що не хочете бачити цю пропозицію більше?
@@ -124,7 +211,7 @@ export default function PromoSubscriptionWidget() {
             <button
               onClick={() => {
                 toast.dismiss(t.id);
-                setConfirmNeverShow(false);
+                setNeverShow(false);
               }}
               className="text-gray-400 hover:text-gray-200 text-sm"
             >
@@ -132,18 +219,20 @@ export default function PromoSubscriptionWidget() {
             </button>
             <button
               onClick={() => {
-                localStorage.setItem("promoWidgetNeverShow", "true");
+                localStorage.setItem(`${keyBase}_neverShow`, "true");
+                setNeverShow(true);
                 setVisible(false);
                 toast.dismiss(t.id);
                 toast.success("🚫 Сповіщення більше не показуватимуться");
               }}
               className="text-red-400 hover:text-red-300 text-sm"
             >
-              Так, приховати
+              Так, не показувати
             </button>
           </div>
         </div>
-      ), {
+      ),
+      {
         duration: 7000,
         style: {
           background: "#111827",
@@ -151,10 +240,13 @@ export default function PromoSubscriptionWidget() {
           borderRadius: "12px",
           color: "#f9fafb",
         },
-      });
-    }
+      }
+    );
   };
 
+  /* ======================================================
+     🎨 7. Рендер компонента
+     ====================================================== */
   return (
     <AnimatePresence>
       {visible && (
@@ -185,7 +277,7 @@ export default function PromoSubscriptionWidget() {
             <h3 className="text-green-400 font-semibold text-lg flex items-center gap-2">
               <Phone size={18} /> SMS-сповіщення
             </h3>
-            <button onClick={handleNeverShow}>
+            <button onClick={handleCloseClick}>
               <X size={18} className="text-gray-400 hover:text-red-400 transition" />
             </button>
           </div>
@@ -227,9 +319,10 @@ export default function PromoSubscriptionWidget() {
             <input
               type="checkbox"
               checked={neverShow}
-              onChange={(e) => setNeverShow(e.target.checked)}
-              onClick={(e) => {
-                if (e.target.checked) handleNeverShow();
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setNeverShow(checked);
+                if (checked) handleNeverShow();
               }}
             />
             Більше не показувати

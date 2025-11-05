@@ -175,11 +175,10 @@ export default function AdminTestsPage() {
             </div>
             <p className="text-gray-300 mb-6">
               {tLabel(
-                `Ви впевнені, що хочете видалити "${testToDelete.title_ua}"?`,
-                `Are you sure you want to delete "${
-                  testToDelete.title_en || testToDelete.title
-                }"?`
+                `Ви впевнені, що хочете видалити "${testToDelete.title || testToDelete.title_ua}"?`,
+                `Are you sure you want to delete "${testToDelete.title || testToDelete.title_en}"?`
               )}
+
             </p>
 
             <div className="flex justify-end gap-3">

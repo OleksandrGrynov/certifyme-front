@@ -128,6 +128,7 @@ export default function AchievementsPage() {
     personal: achievements.filter((a) => a.category === "personal"),
     global: achievements.filter((a) => a.category === "global"),
     creative: achievements.filter((a) => a.category === "creative"),
+    fun: achievements.filter((a) => a.category === "fun"),
   };
 
   const categoryNames = {
@@ -135,6 +136,8 @@ export default function AchievementsPage() {
     global: lang === "ua" ? "Глобальні серед студентів" : "Global among students",
     creative:
       lang === "ua" ? "Креативні / Пасхальні" : "Creative / Easter eggs",
+    fun: lang === "ua" ? "Веселі / бонусні" : "Fun / Bonus",
+
   };
 
   const icons = {
@@ -187,7 +190,8 @@ export default function AchievementsPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-center py-8 bg-gray-900/80 shadow-lg sticky top-0 z-20 backdrop-blur-md"
+        className="text-center py-8 bg-gray-900/80 shadow-lg sticky top-[64px] z-20 backdrop-blur-md"
+
       >
         <h1 className="text-3xl font-bold text-green-400 mb-2">
           {lang === "ua" ? "🏆 Мої досягнення" : "🏆 My Achievements"}

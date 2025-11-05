@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
 import tToast from "../lib/tToast";
+import { motion } from "framer-motion";
 
 export default function TestDetailsPage() {
   const { id } = useParams();

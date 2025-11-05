@@ -289,16 +289,13 @@ export default function AdminCertificatesPage() {
                           </td>
                           <td className="p-3 text-center flex justify-center gap-3">
                               <button
-                                onClick={() => handleView(c.cert_id)}
-                                title={
-                                    lang === "ua"
-                                      ? "Переглянути сертифікат"
-                                      : "View certificate"
-                                }
+                                onClick={() => handleView(c.cert_id || c.certId)}
+                                title={lang === "ua" ? "Переглянути сертифікат" : "View certificate"}
                                 className="text-blue-400 hover:text-blue-600 transition"
                               >
                                   <ExternalLink size={18} />
                               </button>
+
                               <button
                                 onClick={() => handleDelete(c.id)}
                                 title={lang === "ua" ? "Видалити" : "Delete"}

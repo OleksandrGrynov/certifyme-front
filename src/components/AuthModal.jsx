@@ -89,12 +89,14 @@ export default function AuthModal({ isOpen, onClose }) {
             if (data.success) {
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("isAuthenticated", "true");
-                if (data.user && (!data.user.password || data.user.password === "")) {
+                if (data.user && data.user.isGoogleUser && (!data.user.password || data.user.password === "")) {
+
                     setShowSetPassword(true);
                 } else {
                     onClose();
                     window.location.reload();
                 }
+
             } else toast.error(t("error_google"));
         } catch {
             toast.error(t("error_google"));
@@ -155,17 +157,19 @@ export default function AuthModal({ isOpen, onClose }) {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
-                <AnimatePresence>
-                    <motion.div
-                        key="auth"
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 120, damping: 10 }}
-                        className="relative bg-gray-900 text-gray-200 rounded-2xl shadow-2xl p-8 w-full max-w-md"
-                    >
-                        <button
+            <div className="fixed inset-0 bg-black/70 z-[9999] backdrop-blur-sm flex justify-center items-center">
+
+            <AnimatePresence>
+                <motion.div
+                  key="auth"
+                  initial={{ scale: 0.9, opacity: 0, y: -20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: -20 }}
+                  transition={{ type: "spring", stiffness: 120, damping: 10 }}
+                  className="relative bg-gray-900 text-gray-200 rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4 my-6 overflow-y-auto max-h-[90vh]"
+                >
+
+                <button
                             onClick={onClose}
                             className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
                         >
@@ -281,12 +285,20 @@ export default function AuthModal({ isOpen, onClose }) {
                             <div className="flex-1 h-px bg-gray-700"></div>
                         </div>
 
-                        <div className="flex flex-col gap-3">
-                            <GoogleLogin
-                                onSuccess={handleGoogleSuccess}
-                                onError={() => toast.error(t("error_google"))}
-                            />
+                        {/* 🔹 Google вхід (по центру) */}
+                        <div className="flex justify-center mt-6">
+                            <div className="w-full flex justify-center">
+                                <GoogleLogin
+                                  onSuccess={handleGoogleSuccess}
+                                  onError={() => toast.error(t("error_google"))}
+                                  useOneTap={false}
+                                  theme="filled_black"
+                                  size="large"
+                                  shape="rectangular"
+                                />
+                            </div>
                         </div>
+
 
                         <p className="text-sm text-center mt-6 text-gray-400">
                             {isRegister ? t("already_account") : t("no_account")}{" "}
@@ -317,8 +329,9 @@ export default function AuthModal({ isOpen, onClose }) {
 
             {/* 🔹 Модалка створення пароля після Google */}
             {showSetPassword && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] backdrop-blur-sm">
-                    <motion.div
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] backdrop-blur-sm">
+
+              <motion.div
                         initial={{ y: 100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ duration: 0.3 }}
@@ -348,8 +361,9 @@ export default function AuthModal({ isOpen, onClose }) {
 
             {/* 🔹 Модалка "Забув пароль" */}
             {showForgot && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70] backdrop-blur-sm">
-                    <motion.div
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] backdrop-blur-sm">
+
+              <motion.div
                         initial={{ y: 50, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ duration: 0.3 }}

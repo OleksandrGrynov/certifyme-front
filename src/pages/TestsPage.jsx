@@ -1,6 +1,6 @@
+// src/pages/TestsPage.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -10,7 +10,7 @@ export default function TestsPage() {
   const { i18n } = useTranslation();
   const [tests, setTests] = useState([]);
   const [ownedIds, setOwnedIds] = useState(new Set());
-  const [passedTests, setPassedTests] = useState([]); // ✅ новий стейт
+  const [passedTests, setPassedTests] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState(null);
@@ -63,13 +63,29 @@ export default function TestsPage() {
       const testId = params.get("testId");
       if (!isPaid || !testId) return;
 
+      // ✅ Запобігання повторному виконанню
+      const key = `paid_${testId}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "done");
+
+      // 🟢 У продакшені нічого не робимо — чекати webhook
+      if (!import.meta.env.DEV) {
+        tToast.success(
+          "✅ Оплата обробляється. Доступ з'явиться за мить.",
+          "✅ Payment is processing. Access will appear shortly."
+        );
+        await loadTests();
+        // Очистити URL
+        window.history.replaceState({}, "", "/tests");
+        return;
+      }
+
+      // 🧪 DEV: підтверджуємо локально
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        console.log("🎯 Grant access request:", { testId });
-
-        const res = await fetch("http://localhost:5000/api/user/tests/grant", {
+        const res = await fetch("http://localhost:5000/api/payments/confirm-local", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -79,19 +95,33 @@ export default function TestsPage() {
         });
 
         const data = await res.json();
-        if (data.success) {
-          console.log("✅ Access granted");
 
+        if (data.success) {
           toast.dismiss();
           tToast.success(
             "✅ Оплата успішна! Доступ до тесту відкрито.",
             "✅ Payment successful! Access granted."
           );
 
+          if (data.unlocked?.length > 0) {
+            const sound = new Audio("/sounds/unlock.mp3");
+            sound.volume = 0.5;
+            sound.play().catch(() => {});
+            for (const ach of data.unlocked) {
+              const title =
+                i18n.language === "ua"
+                  ? ach.title_ua || "Нове досягнення 🏆"
+                  : ach.title_en || "New achievement 🏆";
+              tToast.success(
+                `🏆 ${title}`,
+                i18n.language === "ua" ? "Досягнення розблоковано!" : "Achievement unlocked!"
+              );
+            }
+          }
+
           await loadTests();
           navigate("/tests", { replace: true });
         } else {
-          console.warn("⚠️ Grant response:", data);
           tToast.error("⚠️ Не вдалося видати доступ", "⚠️ Failed to grant access");
         }
       } catch (err) {
@@ -101,19 +131,15 @@ export default function TestsPage() {
     };
 
     grantAccessAfterPayment();
-  }, [location.search, loadTests, navigate]);
+  }, [location.search, loadTests, navigate, i18n.language]);
 
-  /** ─────────────────────────────
-   * 📥 Початкове завантаження
-   * ───────────────────────────── */
+  // 📥 Початкове завантаження
   useEffect(() => {
     loadTests();
     loadPassedTests();
   }, [loadTests, loadPassedTests]);
 
-  /** ─────────────────────────────
-   * 🔍 Фільтр тестів
-   * ───────────────────────────── */
+  // 🔍 Фільтр тестів
   const filtered = useMemo(() => {
     if (activeTab === "owned") return tests.filter((t) => ownedIds.has(t.id));
     if (activeTab === "notOwned") return tests.filter((t) => !ownedIds.has(t.id));
@@ -121,9 +147,7 @@ export default function TestsPage() {
     return tests;
   }, [tests, ownedIds, activeTab, passedTests]);
 
-  /** ─────────────────────────────
-   * 💲 Форматування валюти
-   * ───────────────────────────── */
+  // 💲 Форматування валюти
   const formatCurrency = (cents, currency = "usd") => {
     const amount = (cents || 0) / 100;
     const locale = i18n.language === "ua" ? "uk-UA" : "en-US";
@@ -135,9 +159,7 @@ export default function TestsPage() {
     }).format(amount);
   };
 
-  /** ─────────────────────────────
-   * 🛒 Покупка тесту
-   * ───────────────────────────── */
+  // 🛒 Покупка тесту
   const handleBuy = async (testId) => {
     if (!token) {
       tToast.error("Спочатку увійдіть у профіль", "Please sign in first");
@@ -173,9 +195,7 @@ export default function TestsPage() {
     }
   };
 
-  /** ─────────────────────────────
-   * 🖼️ Рендер сторінки
-   * ───────────────────────────── */
+  // 🖼️ Рендер
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
       <h1 className="text-3xl font-bold text-center mb-8">Тести / Tests</h1>
@@ -288,92 +308,50 @@ export default function TestsPage() {
 
                 <div className="flex gap-3 mt-auto">
                   {isPassed ? (
-                    <button
-                      onClick={async () => {
-                        try {
-                          const token = localStorage.getItem("token");
-                          if (!token) {
-                            tToast.error("Спочатку увійдіть у профіль", "Please sign in first");
-                            return;
+                    <div className="flex flex-col gap-2 w-full text-sm text-gray-300">
+                      <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                        <p>
+                          ✅ {tLabel("Правильних:", "Correct:")}{" "}
+                          <span className="text-green-400 font-semibold">{test.score}</span> /{" "}
+                          {test.total}
+                        </p>
+                        <p>
+                          ❌ {tLabel("Неправильних:", "Incorrect:")}{" "}
+                          <span className="text-red-400 font-semibold">
+                            {test.total - test.score}
+                          </span>
+                        </p>
+                        <p>
+                          📊 {tLabel("Результат:", "Result:")}{" "}
+                          <span className="text-yellow-400 font-semibold">{scorePercent}%</span>
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Link
+                          to={
+                            activeTab === "passed"
+                              ? `/tests/${test.testId}/result`
+                              : `/tests/${test.testId}/details`
                           }
+                          className="flex-1"
+                        >
+                          <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-md text-sm transition">
+                            {activeTab === "passed"
+                              ? tLabel("Результат", "Result")
+                              : tLabel("Деталі", "Details")}
+                          </button>
+                        </Link>
 
-                          // 🔹 Показуємо початковий лоадер
-                          const loadingId = toast.loading("⏳ Перевіряємо сертифікат...");
-
-                          // 1️⃣ Спочатку пробуємо знайти існуючий PDF
-                          const checkRes = await fetch(
-                            `http://localhost:5000/api/tests/certificate/check/${test.test_id || test.id}`,
-                            { headers: { Authorization: `Bearer ${token}` } }
-                          );
-
-                          toast.dismiss(loadingId);
-
-                          if (checkRes.ok) {
-                            // ✅ Якщо існує — завантажуємо його
-                            const blob = await checkRes.blob();
-                            const url = window.URL.createObjectURL(blob);
-                            const link = document.createElement("a");
-                            link.href = url;
-                            link.download = `Certificate_${test.title_ua || test.title_en}.pdf`;
-                            link.click();
-                            window.URL.revokeObjectURL(url);
-
-                            tToast.success(
-                              "🎓 Завантажено існуючий сертифікат!",
-                              "🎓 Existing certificate downloaded!"
-                            );
-                            return;
-                          }
-
-                          // 2️⃣ Якщо не знайдено — генеруємо новий
-                          const genId = toast.loading("🧾 Генеруємо новий сертифікат...");
-
-                          const res = await fetch("http://localhost:5000/api/tests/certificate", {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              Authorization: `Bearer ${token}`,
-                            },
-                            body: JSON.stringify({
-                              test_id: test.test_id || test.id,
-                              test_title: test.title_ua || test.title_en,
-                              score: test.score,
-                              total: test.total,
-                            }),
-                          });
-
-                          toast.dismiss(genId);
-
-                          if (!res.ok) throw new Error("Certificate generation failed");
-
-                          // ⬇️ Завантажуємо PDF
-                          const blob = await res.blob();
-                          const url = window.URL.createObjectURL(blob);
-                          const link = document.createElement("a");
-                          link.href = url;
-                          link.download = `Certificate_${test.title_ua || test.title_en}.pdf`;
-                          link.click();
-                          window.URL.revokeObjectURL(url);
-
-                          tToast.success(
-                            "🎓 Сертифікат успішно згенеровано!",
-                            "🎓 Certificate generated!"
-                          );
-                        } catch (err) {
-                          console.error("❌ Certificate error:", err);
-                          toast.dismiss();
-                          tToast.error(
-                            "Не вдалося створити або завантажити сертифікат",
-                            "Failed to generate or fetch certificate"
-                          );
-                        }
-                      }}
-                      className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black py-2 rounded-md text-sm font-semibold transition"
-                    >
-                      🎓 {tLabel("Сертифікат", "Certificate")}
-                    </button>
+                        <button
+                          onClick={() => navigate(`/tests/${test.testId}`)}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md text-sm font-semibold transition"
+                        >
+                          {tLabel("Повторити", "Retry")}
+                        </button>
+                      </div>
+                    </div>
                   ) : owned ? (
-
                     <>
                       <button
                         onClick={async () => {
@@ -425,7 +403,6 @@ export default function TestsPage() {
                     </>
                   )}
                 </div>
-
               </motion.div>
             );
           })}

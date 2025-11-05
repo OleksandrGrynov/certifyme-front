@@ -255,11 +255,12 @@ export default function TestPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          test_title: getText(test, "title"),
-          score,
-          total: test.questions.length,
+          testId: test.id, // ✅ надсилаємо ідентифікатор тесту
+          score,           // ✅ кількість правильних
+          total: test.questions.length, // ✅ загальна кількість
         }),
       });
+
 
       if (!res.ok) throw new Error("Download failed");
 
@@ -267,7 +268,8 @@ export default function TestPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Certificate_${getText(test, "title")}.pdf`;
+      a.download = `Certificate_${getText(test, "title")}_${new Date().toISOString().slice(0,10)}.pdf`;
+
       a.click();
 
       toast.success(

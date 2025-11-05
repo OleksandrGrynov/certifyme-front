@@ -32,7 +32,10 @@ export default function AchievementListener() {
           if (audioUnlocked) audio.play().catch(() => {});
 
           // ✅ використовуємо tToast (його Toaster уже є в Layout.jsx)
-          tToast.success(`🏆 ${a.title_ua || a.title_en}`);
+          tToast.success(
+            `🏆 ${a.title_ua || "Досягнення"}`,
+            `🏆 ${a.title_en || "Achievement"}`
+          );
         }, i * 1200);
       });
 

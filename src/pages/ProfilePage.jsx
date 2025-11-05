@@ -62,6 +62,13 @@ export default function ProfilePage() {
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("token");
+    // 🧹 Очистити всі promoWidget_* ключі
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("promoWidget_")) {
+        localStorage.removeItem(key);
+      }
+    });
+
     navigate("/");
     window.location.reload();
   };
@@ -132,8 +139,8 @@ export default function ProfilePage() {
       if (data.success) {
         successSound.play();
         tToast.success(
-          "✅ Пароль успішно змінено! Ми надіслали лист-підтвердження на вашу пошту.",
-          "✅ Password changed! We've sent a confirmation email.",
+          "✅ Пароль успішно змінено!",
+          "✅ Password changed!",
         );
         setPasswords({ old: "", new: "", confirm: "" });
         setShowPasswordForm(false);

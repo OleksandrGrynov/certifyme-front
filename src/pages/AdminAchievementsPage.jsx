@@ -1,32 +1,29 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Edit3, Trash } from "lucide-react";
+import { Plus, Edit3, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ConfirmModal from "../components/ConfirmModal";
 import tToast from "../lib/tToast";
 
 export default function AdminAchievementsPage() {
-    const [achievements, setAchievements] = useState([]);
-    const [showForm, setShowForm] = useState(false);
-    const [editing, setEditing] = useState(null);
     const { i18n } = useTranslation();
     const lang = i18n.language === "en" ? "en" : "ua";
 
-    // 🔹 Початкові поля форми
+    const [achievements, setAchievements] = useState([]);
+    const [showForm, setShowForm] = useState(false);
+    const [editing, setEditing] = useState(null);
+
     const emptyForm = {
         title_ua: "",
         description_ua: "",
         image_url: "",
         category: "",
         icon: "",
-        target_value: "",
         condition_type: "",
         condition_value: "",
-        trigger_text: "", // 🧠 нове поле для GPT-умови
     };
 
     const [form, setForm] = useState(emptyForm);
 
-    // 🔹 Confirm modal
     const [confirmState, setConfirmState] = useState({
         open: false,
         title: lang === "ua" ? "Підтвердження" : "Confirm",
@@ -36,16 +33,9 @@ export default function AdminAchievementsPage() {
         resolve: null,
     });
 
-    const confirmAsync = ({ title, message, confirmText, cancelText }) =>
+    const confirmAsync = (opts) =>
       new Promise((resolve) =>
-        setConfirmState({
-            open: true,
-            title: title || confirmState.title,
-            message: message || "",
-            confirmText: confirmText || confirmState.confirmText,
-            cancelText: cancelText || confirmState.cancelText,
-            resolve,
-        })
+        setConfirmState({ ...confirmState, ...opts, open: true, resolve })
       );
 
     const closeConfirm = (result) => {
@@ -53,17 +43,17 @@ export default function AdminAchievementsPage() {
         setConfirmState((s) => ({ ...s, open: false }));
     };
 
-    // 🔹 Завантаження досягнень
+    /* 🔹 Завантаження досягнень */
     const loadAchievements = useCallback(async () => {
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(
-              `http://localhost:5000/api/achievements?lang=${lang}`,
+              `http://localhost:5000/api/admin/achievements`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
+
             const data = await res.json();
             if (data.success) setAchievements(data.achievements || []);
-            else console.error("⚠️ Failed to load achievements:", data.message);
         } catch (err) {
             console.error("❌ Error loading achievements:", err);
         }
@@ -73,14 +63,13 @@ export default function AdminAchievementsPage() {
         loadAchievements();
     }, [loadAchievements]);
 
-    // 🟢 Зберегти (створити або оновити)
+    /* 🟢 Зберегти або оновити */
     const handleSave = async () => {
         const token = localStorage.getItem("token");
         const method = editing ? "PUT" : "POST";
         const url = editing
           ? `http://localhost:5000/api/admin/achievements/${editing.id}`
           : "http://localhost:5000/api/admin/achievements";
-
 
         try {
             const res = await fetch(url, {
@@ -93,18 +82,8 @@ export default function AdminAchievementsPage() {
             });
 
             const data = await res.json();
-
             if (data.success) {
-                if (editing) {
-                    setAchievements((prev) =>
-                      prev.map((a) =>
-                        a.id === editing.id ? data.achievement : a
-                      )
-                    );
-                } else {
-                    setAchievements((prev) => [...prev, data.achievement]);
-                }
-
+                await loadAchievements(); // ✅ Повне оновлення списку
                 setShowForm(false);
                 setEditing(null);
                 setForm(emptyForm);
@@ -112,7 +91,7 @@ export default function AdminAchievementsPage() {
             } else {
                 tToast.error(
                   "❌ " + (data.message || "Помилка збереження"),
-                  "❌ " + (data.message || "Save error")
+                  "❌ Save error"
                 );
             }
         } catch (err) {
@@ -121,36 +100,28 @@ export default function AdminAchievementsPage() {
         }
     };
 
-    // 🟡 Почати редагування
     const handleEdit = (a) => {
         setEditing(a);
         setForm({
-            title_ua: a.title_ua,
-            description_ua: a.description_ua,
-            image_url: a.image_url,
-            category: a.category,
-            icon: a.icon,
-            target_value: a.target_value || "",
-            condition_type: a.condition_type || "",
-            condition_value: a.condition_value || "",
-            trigger_text: a.trigger_text || "",
+            title_ua: a.titleUa || "",
+            description_ua: a.descriptionUa || "",
+            image_url: a.imageUrl || "",
+            category: a.category || "",
+            icon: a.icon || "",
+            condition_type: a.conditionType || "",
+            condition_value: a.conditionValue || "",
         });
         setShowForm(true);
     };
 
-    // 🔴 Видалення
+    /* 🔴 Видалення */
     const handleDelete = async (id) => {
         const ok = await confirmAsync({
-            title:
-              lang === "ua"
-                ? "Видалення досягнення"
-                : "Delete achievement",
+            title: lang === "ua" ? "Видалення досягнення" : "Delete achievement",
             message:
               lang === "ua"
                 ? "Видалити це досягнення?"
                 : "Delete this achievement?",
-            confirmText: lang === "ua" ? "Видалити" : "Delete",
-            cancelText: lang === "ua" ? "Скасувати" : "Cancel",
         });
         if (!ok) return;
 
@@ -165,13 +136,8 @@ export default function AdminAchievementsPage() {
             );
             const data = await res.json();
             if (data.success) {
-                setAchievements((prev) => prev.filter((a) => a.id !== id));
+                await loadAchievements();
                 tToast.success("✅ Видалено", "✅ Deleted");
-            } else {
-                tToast.error(
-                  "❌ " + (data.message || "Помилка видалення"),
-                  "❌ " + (data.message || "Delete error")
-                );
             }
         } catch (err) {
             console.error("❌ Delete error:", err);
@@ -179,12 +145,13 @@ export default function AdminAchievementsPage() {
         }
     };
 
+    /* 🎨 UI */
     return (
-      <div>
-          {/* 🔹 Заголовок і кнопка додавання */}
-          <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl text-green-400 font-semibold">
-                  🏅 {lang === "ua" ? "Досягнення" : "Achievements"}
+      <div className="p-6 text-gray-100">
+          {/* Верхня панель */}
+          <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-green-400 flex items-center gap-2">
+                  🏆 {lang === "ua" ? "Досягнення" : "Achievements"}
               </h2>
               <button
                 onClick={() => {
@@ -192,192 +159,195 @@ export default function AdminAchievementsPage() {
                     setEditing(null);
                     setForm(emptyForm);
                 }}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
               >
                   <Plus size={18} /> {lang === "ua" ? "Додати" : "Add"}
               </button>
           </div>
 
-          {/* 🔹 Список досягнень */}
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {achievements.map((a) => (
-                <div
-                  key={a.id}
-                  className="bg-gray-800 p-4 rounded-lg border border-gray-700"
-                >
-                    {a.image_url && (
-                      <img
-                        src={a.image_url}
-                        alt="achievement"
-                        className="w-full h-32 object-cover rounded mb-2"
-                      />
-                    )}
-                    <h3 className="font-bold text-green-300">{a.title}</h3>
-                    <p className="text-gray-400 text-sm mb-3">
-                        {a.description}
-                    </p>
-                    <p className="text-xs text-gray-500 mb-1">
-                        {lang === "ua" ? "Категорія" : "Category"}:{" "}
-                        <span className="text-green-400">
-                                {a.category}
-                            </span>
-                    </p>
-                    {a.trigger_text && (
-                      <p className="text-xs text-gray-500 mb-1">
-                          {lang === "ua"
-                            ? "Умова (GPT):"
-                            : "Trigger (GPT):"}{" "}
-                          <span className="text-green-400">
-                                    {a.trigger_text}
-                                </span>
-                      </p>
-                    )}
-                    <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => handleEdit(a)}
-                          className="bg-yellow-500 hover:bg-yellow-600 flex-1 py-1 rounded flex items-center justify-center gap-1"
-                        >
-                            <Edit3 size={16} />{" "}
-                            {lang === "ua"
-                              ? "Редагувати"
-                              : "Edit"}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(a.id)}
-                          className="bg-red-600 hover:bg-red-700 flex-1 py-1 rounded flex items-center justify-center gap-1"
-                        >
-                            <Trash size={16} />{" "}
-                            {lang === "ua"
-                              ? "Видалити"
-                              : "Delete"}
-                        </button>
+          {/* Список */}
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {achievements.map((a) => {
+                  const title = lang === "ua" ? a.titleUa : a.titleEn;
+                  const description =
+                    lang === "ua" ? a.descriptionUa : a.descriptionEn;
+
+                  return (
+                    <div
+                      key={a.id}
+                      className="bg-gray-800 border border-gray-700 rounded-xl p-5 shadow-lg hover:shadow-green-600/10 transition flex flex-col"
+                    >
+                        {a.imageUrl && (
+                          <img
+                            src={a.imageUrl}
+                            alt={title}
+                            className="w-full h-36 object-cover rounded-lg mb-3"
+                          />
+                        )}
+
+                        <div className="flex justify-between items-start">
+                            <h3 className="font-semibold text-green-300 text-lg">
+                                {title || "—"}
+                            </h3>
+                            {a.icon && <span className="text-2xl opacity-80">{a.icon}</span>}
+                        </div>
+
+                        <p className="text-sm text-gray-400 mt-1 mb-3">{description || "—"}</p>
+
+                        <div className="text-xs space-y-1 mb-4">
+                            {a.category && (
+                              <p>
+        <span className="text-gray-400">
+          {lang === "ua" ? "Категорія:" : "Category:"}{" "}
+        </span>
+                                  <span className="text-green-400">{a.category}</span>
+                              </p>
+                            )}
+                            {a.conditionType && (
+                              <p>
+        <span className="text-gray-400">
+          {lang === "ua" ? "Тип умови:" : "Condition type:"}{" "}
+        </span>
+                                  <span className="text-green-400">{a.conditionType}</span>
+                              </p>
+                            )}
+                            {a.conditionValue && (
+                              <p>
+        <span className="text-gray-400">
+          {lang === "ua" ? "Значення:" : "Value:"}{" "}
+        </span>
+                                  <span className="text-green-400">{a.conditionValue}</span>
+                              </p>
+                            )}
+                        </div>
+
+                        {/* 🔻 Кнопки прикріплені донизу картки */}
+                        <div className="flex gap-2 mt-auto pt-4 border-t border-gray-700">
+                            <button
+                              onClick={() => handleEdit(a)}
+                              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-1.5 rounded flex items-center justify-center gap-1 transition"
+                            >
+                                <Edit3 size={16} />
+                                {lang === "ua" ? "Редагувати" : "Edit"}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(a.id)}
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1.5 rounded flex items-center justify-center gap-1 transition"
+                            >
+                                <Trash2 size={16} />
+                                {lang === "ua" ? "Видалити" : "Delete"}
+                            </button>
+                        </div>
                     </div>
-                </div>
-              ))}
+
+                  );
+              })}
           </div>
 
-          {/* ✏️ Форма створення / редагування */}
+          {/* Форма */}
           {showForm && (
-            <div className="mt-8 bg-gray-800 p-6 rounded-lg border border-gray-700">
-                <h3 className="text-xl font-bold text-green-400 mb-4">
+            <div className="mt-10 bg-gray-900 p-6 rounded-xl border border-gray-700 shadow-lg max-w-3xl mx-auto">
+                <h3 className="text-2xl font-bold text-green-400 mb-5">
                     {editing
                       ? lang === "ua"
                         ? "Редагування досягнення"
-                        : "Edit achievement"
+                        : "Edit Achievement"
                       : lang === "ua"
                         ? "Нове досягнення"
-                        : "New achievement"}
+                        : "New Achievement"}
                 </h3>
 
-                {/* Назва + опис */}
-                <div className="grid sm:grid-cols-2 gap-2">
+                <div className="grid sm:grid-cols-2 gap-4">
                     <input
                       value={form.title_ua}
-                      onChange={(e) =>
-                        setForm({ ...form, title_ua: e.target.value })
-                      }
+                      onChange={(e) => setForm({ ...form, title_ua: e.target.value })}
                       placeholder="Назва (укр)"
-                      className="p-2 w-full bg-gray-700 rounded"
+                      className="p-3 bg-gray-800 rounded-lg w-full"
                     />
                     <textarea
                       value={form.description_ua}
                       onChange={(e) =>
-                        setForm({
-                            ...form,
-                            description_ua: e.target.value,
-                        })
+                        setForm({ ...form, description_ua: e.target.value })
                       }
                       placeholder="Опис (укр)"
-                      className="p-2 w-full bg-gray-700 rounded h-24"
+                      className="p-3 bg-gray-800 rounded-lg w-full h-24 resize-none"
                     />
                 </div>
 
-                {/* Зображення + категорія + іконка */}
-                <div className="grid sm:grid-cols-3 gap-2 mt-2">
+                <div className="grid sm:grid-cols-3 gap-4 mt-4">
                     <input
                       value={form.image_url}
-                      onChange={(e) =>
-                        setForm({
-                            ...form,
-                            image_url: e.target.value,
-                        })
-                      }
-                      placeholder={
-                          lang === "ua"
-                            ? "URL зображення"
-                            : "Image URL"
-                      }
-                      className="p-2 w-full bg-gray-700 rounded"
+                      onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                      placeholder="URL зображення"
+                      className="p-3 bg-gray-800 rounded-lg"
                     />
                     <input
                       value={form.category}
-                      onChange={(e) =>
-                        setForm({
-                            ...form,
-                            category: e.target.value,
-                        })
-                      }
-                      placeholder={
-                          lang === "ua"
-                            ? "Категорія"
-                            : "Category (personal/global/creative)"
-                      }
-                      className="p-2 w-full bg-gray-700 rounded"
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                      placeholder="Категорія (personal/global/creative)"
+                      className="p-3 bg-gray-800 rounded-lg"
                     />
                     <input
                       value={form.icon}
-                      onChange={(e) =>
-                        setForm({ ...form, icon: e.target.value })
-                      }
-                      placeholder={
-                          lang === "ua"
-                            ? "Іконка (emoji або svg)"
-                            : "Icon (emoji or svg)"
-                      }
-                      className="p-2 w-full bg-gray-700 rounded"
+                      onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                      placeholder="Іконка (emoji або svg)"
+                      className="p-3 bg-gray-800 rounded-lg"
                     />
                 </div>
 
-                {/* 🧠 Умова виконання (GPT створить код автоматично) */}
-                <div className="mt-3">
-                    <label className="block text-sm text-gray-400 mb-1">
-                        {lang === "ua"
-                          ? "Умова видачі (GPT створить код автоматично)"
-                          : "Condition (GPT will generate code automatically)"}
-                    </label>
-                    <textarea
-                      value={form.trigger_text}
+                <div className="grid sm:grid-cols-2 gap-4 mt-4">
+                    <select
+                      value={form.condition_type}
                       onChange={(e) =>
-                        setForm({ ...form, trigger_text: e.target.value })
+                        setForm({ ...form, condition_type: e.target.value })
+                      }
+                      className="p-3 bg-gray-800 rounded-lg"
+                    >
+                        <option value="">
+                            {lang === "ua" ? "Тип умови..." : "Condition type..."}
+                        </option>
+                        <option value="tests_passed">
+                            ✅ {lang === "ua" ? "Пройдено тестів" : "Tests passed"}
+                        </option>
+                        <option value="certificates">
+                            📜 {lang === "ua" ? "Отримано сертифікатів" : "Certificates"}
+                        </option>
+                        <option value="payments">
+                            💰 {lang === "ua" ? "Оплат проведено" : "Payments made"}
+                        </option>
+                        <option value="score_avg">
+                            ⭐ {lang === "ua" ? "Середній бал" : "Average score"}
+                        </option>
+                        <option value="streak_days">
+                            🔥 {lang === "ua" ? "Днів поспіль" : "Streak days"}
+                        </option>
+                    </select>
+
+                    <input
+                      type="number"
+                      value={form.condition_value}
+                      onChange={(e) =>
+                        setForm({ ...form, condition_value: e.target.value })
                       }
                       placeholder={
-                          lang === "ua"
-                            ? "Наприклад: 'Якщо користувач пройшов 3 тести без помилок'"
-                            : "Example: 'If user completes 3 tests without mistakes'"
+                          lang === "ua" ? "Значення умови" : "Condition value"
                       }
-                      className="p-2 w-full bg-gray-700 rounded h-24"
+                      className="p-3 bg-gray-800 rounded-lg"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                        {lang === "ua"
-                          ? "GPT автоматично створить код перевірки цієї умови."
-                          : "GPT will automatically generate a code snippet for this condition."}
-                    </p>
                 </div>
 
-                {/* Кнопки */}
-                <div className="flex justify-end gap-2 mt-4">
+
+
+                <div className="flex justify-end gap-3 mt-6">
                     <button
-                      onClick={() => {
-                          setShowForm(false);
-                          setEditing(null);
-                      }}
-                      className="bg-gray-600 px-4 py-2 rounded"
+                      onClick={() => setShowForm(false)}
+                      className="bg-gray-600 hover:bg-gray-700 px-5 py-2 rounded-lg"
                     >
                         {lang === "ua" ? "Скасувати" : "Cancel"}
                     </button>
                     <button
                       onClick={handleSave}
-                      className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded"
+                      className="bg-green-600 hover:bg-green-700 px-5 py-2 rounded-lg"
                     >
                         💾 {lang === "ua" ? "Зберегти" : "Save"}
                     </button>
@@ -386,11 +356,7 @@ export default function AdminAchievementsPage() {
           )}
 
           <ConfirmModal
-            open={confirmState.open}
-            title={confirmState.title}
-            message={confirmState.message}
-            confirmText={confirmState.confirmText}
-            cancelText={confirmState.cancelText}
+            {...confirmState}
             onCancel={() => closeConfirm(false)}
             onConfirm={() => closeConfirm(true)}
           />

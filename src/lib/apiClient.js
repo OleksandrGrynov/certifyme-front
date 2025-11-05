@@ -1,14 +1,17 @@
-export async function fetchWithAuth(input, init = {}) {
+// src/lib/apiClient.js
+export const API_URL = import.meta.env.VITE_API_URL;
+
+export async function fetchWithAuth(endpoint, options = {}) {
   const token = localStorage.getItem("token");
   const headers = {
     "Content-Type": "application/json",
-    ...(init.headers || {}),
+    ...(options.headers || {}),
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-  return fetch(input, {
-    credentials: "include",
-    ...init,
+  return fetch(`${API_URL}${endpoint}`, {
+    ...options,
     headers,
+    credentials: "include",
   });
 }

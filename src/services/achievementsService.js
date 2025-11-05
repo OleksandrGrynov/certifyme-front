@@ -9,6 +9,15 @@ export async function getUserAchievements() {
   });
   return res.data.achievements || [];
 }
+export async function unlockAchievement(code) {
+  const token = localStorage.getItem("token");
+  const res = await axios.post(
+    `${API}/api/achievements/unlock`,
+    { code },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
+}
 
 export async function updateAchievementsBatch(updates) {
   const token = localStorage.getItem("token");

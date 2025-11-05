@@ -1,13 +1,13 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
 
 export default function CheckoutPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { i18n } = useTranslation();
 
   const [test, setTest] = useState(null);
@@ -15,36 +15,75 @@ export default function CheckoutPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
+  /** ─────────────────────────────
+   * 📥 Завантаження даних тесту
+   * ───────────────────────────── */
   useEffect(() => {
     const loadTest = async () => {
       try {
         const res = await fetch(`http://localhost:5000/api/tests/${id}`);
         const data = await res.json();
-        if (data.success && data.test) {
-          setTest(data.test);
-        } else {
-          setError("Тест не знайдено");
-        }
+        if (data.success && data.test) setTest(data.test);
+        else setError(i18n.language === "ua" ? "Тест не знайдено" : "Test not found");
       } catch (err) {
-        console.error("❌ Помилка завантаження тесту:", err);
-        setError("Помилка під час завантаження");
+        console.error("❌ loadTest error:", err);
+        setError(
+          i18n.language === "ua"
+            ? "Помилка під час завантаження тесту"
+            : "Error loading test"
+        );
       } finally {
         setLoading(false);
       }
     };
     loadTest();
-  }, [id]);
+  }, [id, i18n.language]);
 
+
+
+  /** ─────────────────────────────
+   * 💳 Обробка натискання кнопки оплати
+   * ───────────────────────────── */
   const handlePayment = async () => {
     try {
       setPaying(true);
       const token = localStorage.getItem("token");
+
       if (!token) {
-        tToast.error("Будь ласка, увійдіть у профіль перед оплатою", "Please sign in before paying");
+        tToast.error(
+          "Будь ласка, увійдіть у профіль перед оплатою",
+          "Please sign in before paying"
+        );
         navigate("/login");
         return;
       }
 
+      // 🟢 Безкоштовний тест
+      if (!test.price_cents && !test.price_uah) {
+        const res = await fetch("http://localhost:5000/api/user/tests/grant", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ testId: id }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          tToast.success(
+            "✅ Безкоштовний тест відкрито!",
+            "✅ Free test unlocked!"
+          );
+          navigate(`/tests/${id}`);
+          return;
+        } else {
+          tToast.error("Не вдалося видати доступ", "Failed to grant access");
+          return;
+        }
+      }
+
+      // 💳 Створюємо Stripe checkout session
       const res = await fetch("http://localhost:5000/api/payments/checkout", {
         method: "POST",
         headers: {
@@ -53,13 +92,16 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({ testId: id }),
       });
-      const data = await res.json();
 
+      const data = await res.json();
       if (data?.url) {
         localStorage.setItem("lastPaidTestId", id);
-        window.location.href = data.url;
+        window.location.href = data.url; // 🔁 редірект на Stripe
       } else {
-        tToast.error(data?.message || "Помилка створення сесії оплати", data?.message || "Failed to create checkout session");
+        tToast.error(
+          data?.message || "Помилка створення сесії оплати",
+          data?.message || "Failed to create checkout session"
+        );
       }
     } catch (err) {
       console.error(err);
@@ -69,10 +111,28 @@ export default function CheckoutPage() {
     }
   };
 
+  /** ─────────────────────────────
+   * 🧾 Формат ціни
+   * ───────────────────────────── */
+  const getPrice = () => {
+    if (test?.price_uah)
+      return new Intl.NumberFormat("uk-UA", {
+        style: "currency",
+        currency: "UAH",
+      }).format(test.price_uah);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format((test?.price_cents || 0) / 100);
+  };
+
+  /** ─────────────────────────────
+   * 🖼️ Рендер сторінки
+   * ───────────────────────────── */
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen bg-black text-gray-300">
-        Завантаження тесту...
+        {i18n.language === "ua" ? "Завантаження тесту..." : "Loading test..."}
       </div>
     );
 
@@ -84,20 +144,10 @@ export default function CheckoutPage() {
           onClick={() => navigate("/tests")}
           className="mt-4 px-6 py-2 bg-emerald-500 text-black rounded-lg hover:bg-emerald-400 transition"
         >
-          Назад до тестів
+          {i18n.language === "ua" ? "Назад до тестів" : "Back to tests"}
         </button>
       </div>
     );
-
-  const getTitle = () => {
-    if (!test) return "—";
-    return (
-      test.title ||
-      test.title_ua ||
-      test.title_en ||
-      (i18n.language === "en" ? "Untitled test" : "Без назви")
-    );
-  };
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white flex items-center justify-center p-6">
@@ -108,22 +158,21 @@ export default function CheckoutPage() {
         className="max-w-md w-full bg-gray-900/80 rounded-2xl border border-gray-800 p-8 shadow-[0_0_25px_rgba(34,197,94,0.15)]"
       >
         <h1 className="text-2xl font-bold mb-3 text-center text-emerald-400">
-          Підтвердження оплати
+          {i18n.language === "ua"
+            ? "Підтвердження оплати"
+            : "Payment Confirmation"}
         </h1>
 
         <p className="text-center text-gray-300 mb-6">
-          Ви обрали тест:{" "}
-          <span className="font-semibold text-white block mt-1 text-lg">{getTitle()}</span>
+          {i18n.language === "ua" ? "Ви обрали тест:" : "You selected test:"}{" "}
+          <span className="font-semibold text-white block mt-1 text-lg">
+            {test?.title_ua || test?.title_en || "Test"}
+          </span>
         </p>
 
         <div className="flex items-center justify-between text-gray-400 mb-8">
-          <span>Вартість:</span>
-          <span className="text-lg text-white font-semibold">
-            {new Intl.NumberFormat("uk-UA", {
-              style: "currency",
-              currency: "UAH",
-            }).format(test?.price_uah || 0)}
-          </span>
+          <span>{i18n.language === "ua" ? "Вартість:" : "Price:"}</span>
+          <span className="text-lg text-white font-semibold">{getPrice()}</span>
         </div>
 
         <button
@@ -131,7 +180,13 @@ export default function CheckoutPage() {
           disabled={paying}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-60"
         >
-          {paying ? "Обробка..." : "Оплатити через Stripe"}
+          {paying
+            ? i18n.language === "ua"
+              ? "Обробка..."
+              : "Processing..."
+            : i18n.language === "ua"
+              ? "Оплатити через Stripe"
+              : "Pay via Stripe"}
         </button>
       </motion.div>
     </section>

@@ -40,11 +40,25 @@ export default function AnalyticsPage() {
 
       const ov = await ovR.json();
       const di = await dailyR.json();
+      console.log("📊 daily data:", di);
+
       const tp = await topR.json();
       const re = await recentR.json();
 
       setOverview(ov?.data || ov);
-      setDaily(di?.data || di);
+      setDaily({
+        activity:
+          di?.data?.activity?.map((d) => ({
+            day: d.date,
+            count: d.count,
+          })) ?? [],
+        tests:
+          di?.data?.tests?.map((d) => ({
+            day: d.date,
+            count: d.count,
+          })) ?? [],
+      });
+
       setTopCourses(tp?.data || tp || []);
       setRecent(re?.data || re || []);
     } catch (e) {
@@ -84,34 +98,48 @@ export default function AnalyticsPage() {
     }
   };
 
-  // 🔸 Інтерактивний лінійний графік з підказками
+  // 🔸 Оновлений LineChart
   const LineChart = ({ points = [], svgHeight = 180, color = "#34d399" }) => {
-    if (!points || points.length === 0)
-      return <div className="text-gray-500 text-center py-8">{tLabel("Немає даних", "No data")}</div>;
+    const [hoverIndex, setHoverIndex] = useState(null);
 
-    // 🔹 Сортуємо за датами (щоб нові праворуч)
+    if (!points || points.length === 0)
+      return (
+        <div className="text-gray-500 text-center py-8">
+          {tLabel("Немає даних", "No data")}
+        </div>
+      );
+
+    // 🔹 Сортуємо дані по даті
     const data = [...points].sort(
-      (a, b) => new Date(a.date || a.day) - new Date(b.date || b.day)
+      (a, b) => new Date(a.day || a.date) - new Date(b.day || b.date)
     );
 
     const max = Math.max(...data.map((p) => p.count || 0), 1);
-    const w = Math.max(data.length * 60, 400);
-    const stepX = w / (data.length - 1 || 1);
+    const min = Math.min(...data.map((p) => p.count || 0), 0);
 
-    // Крива Безьє для плавності
+    // Мінімум 7 точок для масштабу
+    const totalPoints = Math.max(data.length, 7);
+    const w = totalPoints * 60;
+    const stepX = w / (totalPoints - 1);
+
     const path = data
       .map((p, i) => {
         const x = i * stepX;
-        const y = svgHeight - (p.count / max) * svgHeight;
+        const y =
+          svgHeight -
+          ((p.count - min) / (max - min || 1)) * (svgHeight * 0.85) -
+          15;
         if (i === 0) return `M ${x},${y}`;
         const prevX = (i - 1) * stepX;
-        const prevY = svgHeight - (data[i - 1].count / max) * svgHeight;
+        const prevY =
+          svgHeight -
+          ((data[i - 1].count - min) / (max - min || 1)) *
+          (svgHeight * 0.85) -
+          15;
         const cx = (prevX + x) / 2;
         return `C ${cx},${prevY} ${cx},${y} ${x},${y}`;
       })
       .join(" ");
-
-    const [hoverIndex, setHoverIndex] = useState(null);
 
     return (
       <svg
@@ -121,14 +149,19 @@ export default function AnalyticsPage() {
         preserveAspectRatio="none"
         className="rounded"
       >
-        {/* Підсвічування під лінією */}
+        {/* 🌈 Градієнт під лінією */}
+        <defs>
+          <linearGradient id={`grad-${color}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
         <path
           d={`${path} L ${w},${svgHeight} L 0,${svgHeight} Z`}
-          fill={`${color}22`}
-          stroke="none"
+          fill={`url(#grad-${color})`}
         />
 
-        {/* Основна лінія */}
         <motion.path
           d={path}
           fill="none"
@@ -138,13 +171,16 @@ export default function AnalyticsPage() {
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
           transition={{ duration: 1.2, ease: "easeInOut" }}
+          style={{ filter: `drop-shadow(0px 0px 6px ${color}55)` }}
         />
 
-        {/* Точки і підказки */}
         {data.map((p, i) => {
           const x = i * stepX;
-          const y = svgHeight - (p.count / max) * svgHeight;
-          const dateLabel = new Date(p.date || p.day).toLocaleDateString(
+          const y =
+            svgHeight -
+            ((p.count - min) / (max - min || 1)) * (svgHeight * 0.85) -
+            15;
+          const dateLabel = new Date(p.day || p.date).toLocaleDateString(
             i18n.language === "ua" ? "uk-UA" : "en-US",
             { day: "numeric", month: "short" }
           );
@@ -165,7 +201,6 @@ export default function AnalyticsPage() {
                 <motion.g
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="pointer-events-none"
                 >
                   <rect
                     x={x - 40}
@@ -206,13 +241,17 @@ export default function AnalyticsPage() {
   // 🔸 Інтерактивний стовпчиковий графік
   const BarChart = ({ items = [] }) => {
     if (!items || items.length === 0)
-      return <div className="text-gray-400 text-center py-6">{tLabel("Немає даних", "No data")}</div>;
+      return (
+        <div className="text-gray-400 text-center py-6">
+          {tLabel("Немає даних", "No data")}
+        </div>
+      );
 
     const max = Math.max(...items.map((i) => i.tests_taken || 0), 1);
     const [hovered, setHovered] = useState(null);
 
     return (
-      <div className="relative flex items-end gap-4 h-48 p-4">
+      <div className="relative flex items-end gap-4 h-48 p-4 overflow-visible">
         {items.map((it, i) => {
           const value = it.tests_taken || 0;
           const name = it.name || `#${i + 1}`;
@@ -235,7 +274,9 @@ export default function AnalyticsPage() {
                 whileHover={{ scaleX: 1.1 }}
               ></motion.div>
 
-              <div className="text-xs text-gray-300 mt-2 truncate">{name}</div>
+              <div className="text-[11px] text-gray-300 mt-2 text-center leading-tight break-words max-w-[60px] mx-auto">
+                {name}
+              </div>
 
               {hovered === i && (
                 <motion.div
@@ -258,10 +299,17 @@ export default function AnalyticsPage() {
     () => ({
       enrolledCourses: overview?.courses_enrolled ?? "—",
       testsTaken: overview?.my_tests_taken ?? "—",
-      avgScore: overview?.my_avg_score ? `${overview.my_avg_score.toFixed(1)}%` : "—",
+      avgScore: overview?.my_avg_score
+        ? `${overview.my_avg_score.toFixed(1)}%`
+        : "—",
       certificates: overview?.my_certificates ?? "—",
-      passRate: overview?.my_pass_rate ? `${(overview.my_pass_rate * 100).toFixed(1)}%` : "—",
+      passRate:
+        overview?.my_pass_rate !== undefined
+          ? `${overview.my_pass_rate.toFixed(1)}%`
+          : "—",
       streak: overview?.current_streak_days ?? "—",
+      level: overview?.level ?? 0,
+      levelProgress: overview?.level_progress ?? 0,
     }),
     [overview]
   );
@@ -292,39 +340,78 @@ export default function AnalyticsPage() {
 
         {isPublicView && (
           <div className="bg-yellow-900/20 text-yellow-200 p-3 rounded mb-4 text-center">
-            {tLabel("Показана публічна версія аналітики.", "Public analytics view.")}
+            {tLabel(
+              "Показана публічна версія аналітики.",
+              "Public analytics view."
+            )}
           </div>
         )}
 
         {!localStorage.getItem("token") ? (
           <div className="text-center text-gray-400 mt-10">
-            {tLabel("Будь ласка, увійдіть, щоб переглянути аналітику.", "Please log in to view analytics.")}
+            {tLabel(
+              "Будь ласка, увійдіть, щоб переглянути аналітику.",
+              "Please log in to view analytics."
+            )}
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-10">
-              <StatCard title={tLabel("Курси (підписані)", "Courses (enrolled)")} value={stats.enrolledCourses} />
-              <StatCard title={tLabel("Тести пройдено", "Tests completed")} value={stats.testsTaken} />
-              <StatCard title={tLabel("Середній бал", "Average score")} value={stats.avgScore} />
-              <StatCard title={tLabel("Сертифікатів", "Certificates")} value={stats.certificates} />
-              <StatCard title={tLabel("Прохідність", "Pass rate")} value={stats.passRate} />
-              <StatCard title={tLabel("Поточний стрик", "Current streak")} value={stats.streak} />
-              <StatCard title="—" value="—" />
+              <StatCard
+                title={tLabel("Курси (підписані)", "Courses (enrolled)")}
+                value={stats.enrolledCourses}
+              />
+              <StatCard
+                title={tLabel("Тести пройдено", "Tests completed")}
+                value={stats.testsTaken}
+              />
+              <StatCard
+                title={tLabel("Середній бал", "Average score")}
+                value={stats.avgScore}
+              />
+              <StatCard
+                title={tLabel("Сертифікатів", "Certificates")}
+                value={stats.certificates}
+              />
+              <StatCard
+                title={tLabel("Прохідність", "Pass rate")}
+                value={stats.passRate}
+              />
+              <StatCard
+                title={tLabel("Поточний стрик", "Current streak")}
+                value={stats.streak}
+              />
+              <StatCard
+                title={tLabel("Рівень користувача", "User level")}
+                value={`Lv. ${stats.level}`}
+                hint={`${stats.levelProgress}% ${tLabel(
+                  "до наступного рівня",
+                  "to next level"
+                )}`}
+              />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
                 <div className="flex justify-between mb-3">
-                  <div className="text-lg font-semibold">{tLabel("Активність", "Activity")}</div>
-                  <div className="text-sm text-gray-400">{tLabel("ост. 30 днів", "last 30 days")}</div>
+                  <div className="text-lg font-semibold">
+                    {tLabel("Активність", "Activity")}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {tLabel("ост. 30 днів", "last 30 days")}
+                  </div>
                 </div>
                 <LineChart points={daily?.activity ?? []} color="#34d399" />
               </div>
 
               <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
                 <div className="flex justify-between mb-3">
-                  <div className="text-lg font-semibold">{tLabel("Ваші тести", "Your tests")}</div>
-                  <div className="text-sm text-gray-400">{tLabel("ост. 30 днів", "last 30 days")}</div>
+                  <div className="text-lg font-semibold">
+                    {tLabel("Ваші тести", "Your tests")}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {tLabel("ост. 30 днів", "last 30 days")}
+                  </div>
                 </div>
                 <LineChart points={daily?.tests ?? []} color="#60a5fa" />
               </div>
@@ -333,7 +420,9 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
               <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
                 <div className="flex justify-between mb-2">
-                  <div className="text-lg font-semibold">{tLabel("Топ курсів", "Top courses")}</div>
+                  <div className="text-lg font-semibold">
+                    {tLabel("Топ курсів", "Top courses")}
+                  </div>
                   <div className="text-sm text-gray-400">Top 10</div>
                 </div>
                 <BarChart items={topCourses} />
@@ -341,29 +430,51 @@ export default function AnalyticsPage() {
 
               <div className="bg-gray-900/70 border border-gray-700 p-4 rounded-xl backdrop-blur-md shadow-lg">
                 <div className="flex justify-between mb-2">
-                  <div className="text-lg font-semibold">{tLabel("Останні події", "Recent events")}</div>
-                  <div className="text-sm text-gray-400">Login / Test / Cert</div>
+                  <div className="text-lg font-semibold">
+                    {tLabel("Останні події", "Recent events")}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Login / Test / Cert
+                  </div>
                 </div>
                 <div className="max-h-72 overflow-auto text-sm">
                   <table className="w-full">
                     <thead>
                     <tr className="text-gray-400 text-left">
-                      <th className="pb-2">{tLabel("Час", "Time")}</th>
-                      <th className="pb-2">{tLabel("Тип", "Type")}</th>
-                      <th className="pb-2">{tLabel("Опис", "Description")}</th>
+                      <th className="pb-2">
+                        {tLabel("Час", "Time")}
+                      </th>
+                      <th className="pb-2">
+                        {tLabel("Тип", "Type")}
+                      </th>
+                      <th className="pb-2">
+                        {tLabel("Опис", "Description")}
+                      </th>
                     </tr>
                     </thead>
                     <tbody>
                     {recent.map((r, i) => (
-                      <tr key={i} className="border-t border-gray-800/60">
-                        <td className="py-2 text-xs text-gray-400">{formatDate(r.created_at || r.time)}</td>
-                        <td className="py-2 text-green-400">{r.type}</td>
-                        <td className="py-2 text-gray-300">{r.description}</td>
+                      <tr
+                        key={i}
+                        className="border-t border-gray-800/60"
+                      >
+                        <td className="py-2 text-xs text-gray-400">
+                          {formatDate(r.created_at || r.time)}
+                        </td>
+                        <td className="py-2 text-green-400">
+                          {r.type}
+                        </td>
+                        <td className="py-2 text-gray-300">
+                          {r.description}
+                        </td>
                       </tr>
                     ))}
                     {recent.length === 0 && (
                       <tr>
-                        <td colSpan={3} className="text-center py-4 text-gray-500">
+                        <td
+                          colSpan={3}
+                          className="text-center py-4 text-gray-500"
+                        >
                           {tLabel("Немає подій", "No events")}
                         </td>
                       </tr>

@@ -221,11 +221,26 @@ export default function AdminContactsPage() {
               </div>
 
               <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-700">
-                <span className="text-xs text-gray-500">
-                  {new Date(c.created_at).toLocaleString(
-                    i18n.language === "en" ? "en-US" : "uk-UA"
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <Clock size={12} className="opacity-70" />
+                  {c.created_at ? (
+                    <span>
+                   {new Date(c.created_at).toLocaleString(
+                    i18n.language === "ua" ? "uk-UA" : "en-US",
+                    {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                       minute: "2-digit",
+                    }
                   )}
-                </span>
+                  </span>
+                  ) : (
+                    <span>—</span>
+                  )}
+                </div>
+
 
                 <div className="flex gap-2">
                   {c.status === "new" && (
