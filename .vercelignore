@@ -1,0 +1,9 @@
+node_modules
+src
+.vscode
+.idea
+scripts
+*.log
+*.config.js
+*.mjs
+.env
