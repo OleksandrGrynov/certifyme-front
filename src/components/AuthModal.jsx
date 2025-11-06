@@ -49,12 +49,17 @@ export default function AuthModal({ isOpen, onClose }) {
                 const data = await res.json();
 
                 if (res.ok) {
-                    if (data.message) toast.success(data.message);
-                    else tToast.success("✅ Реєстрація успішна", "✅ Registration successful");
-                    setShowOtpModal(true);
+                    toast.success("📩 Код підтвердження надіслано на пошту!");
+
+                    // 🔹 Закриваємо поточну модалку, щоб не перекривала OTP
+                    onClose();
+
+                    // 🔹 Через невелику затримку відкриваємо модалку OTP
+                    setTimeout(() => {
+                        setShowOtpModal(true);
+                    }, 400);
                 } else {
-                    if (data.message) toast.error(data.message);
-                    else tToast.error("❌ Помилка реєстрації", "❌ Registration error");
+                    toast.error(data.message || "❌ Помилка реєстрації");
                 }
             } else {
                 const res = await fetch(`${API_URL}/api/users/login`, {
@@ -71,12 +76,14 @@ export default function AuthModal({ isOpen, onClose }) {
                     window.location.reload();
                 } else toast.error(data.message || t("error_login"));
             }
-        } catch {
-            toast.error(t("error_connection"));
+        } catch (err) {
+            toast.error("❌ Помилка з'єднання з сервером");
+            console.error("Register/Login error:", err);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleGoogleSuccess = async (credentialResponse) => {
         try {
