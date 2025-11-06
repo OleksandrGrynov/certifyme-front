@@ -1,9 +1,21 @@
-node_modules
-src
-.vscode
+# IDE / system
 .idea
-scripts
+.vscode
+
+# Dependencies
+node_modules
+
+# Logs
 *.log
-*.config.js
-*.mjs
+
+# Env and config files (safe to exclude)
 .env
+.env.*
+*.mjs
+
+# Build tools/scripts (не потрібні на сервері)
+scripts/
+
+# Не ігноруємо src і dist!!!
+# src — потрібен для білду
+# dist — це результат білду, його теж не можна виключати

@@ -3,5 +3,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  root: '.', // важливо: index.html у корені
+  root: '.',
+  build: {
+    outDir: 'dist', // обов’язково вказати для Vercel
+  },
+  base: '/', // потрібно для React Router, інакше 404 при оновленні сторінки
 })
