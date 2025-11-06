@@ -194,7 +194,7 @@ export default function MyCertificates() {
 
               <div className="flex gap-3 mt-auto">
                 <a
-                  href={`http://localhost:5173/verify/${cert.cert_id}`}
+                  href={`https://www.certifyme.me/verify/${cert.cert_id}`}
                   className="flex-1 bg-green-600 hover:bg-green-700 px-3 py-2 text-center rounded-md text-sm font-semibold transition"
                 >
                   {tLabel("Перевірити", "Verify")}
