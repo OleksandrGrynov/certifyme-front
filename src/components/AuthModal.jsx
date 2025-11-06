@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
 import { API_URL } from "../lib/apiClient";
 
-export default function AuthModal({ isOpen, onClose }) {
+export default function AuthModal({ isOpen, onClose, onOtpStart }) {
     const { t } = useTranslation();
     const [isRegister, setIsRegister] = useState(false);
     const [formData, setFormData] = useState({
@@ -50,15 +50,10 @@ export default function AuthModal({ isOpen, onClose }) {
 
                 if (res.ok) {
                     toast.success("📩 Код підтвердження надіслано на пошту!");
+                    if (onOtpStart) onOtpStart(formData.email);
+                }
 
-                    // 🔹 Закриваємо поточну модалку, щоб не перекривала OTP
-                    onClose();
-
-                    // 🔹 Через невелику затримку відкриваємо модалку OTP
-                    setTimeout(() => {
-                        setShowOtpModal(true);
-                    }, 400);
-                } else {
+                else {
                     toast.error(data.message || "❌ Помилка реєстрації");
                 }
             } else {
@@ -322,18 +317,7 @@ export default function AuthModal({ isOpen, onClose }) {
                 </AnimatePresence>
             </div>
 
-            {/* 🔹 Модалка OTP підтвердження */}
-            {showOtpModal && (
-                <OtpVerifyModal
-                    email={formData.email}
-                    onSuccess={(user) => {
-                        console.log("✅ Успішна авторизація:", user);
-                        onClose();
-                        window.location.reload();
-                    }}
-                    onClose={() => setShowOtpModal(false)}
-                />
-            )}
+
 
             {/* 🔹 Модалка створення пароля після Google */}
             {showSetPassword && (
