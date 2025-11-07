@@ -79,7 +79,7 @@ export default function ResetPassword() {
         className="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700"
       >
         <h2 className="text-2xl font-bold text-center mb-4 text-green-400">
-          🔁 {t("reset_password_title") || "Новий пароль"}
+           {t("reset_password_title") || "Новий пароль"}
         </h2>
         <p className="text-sm text-gray-400 text-center mb-6">
           {t("reset_password_subtitle") ||
