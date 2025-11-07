@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { GoogleLogin } from "@react-oauth/google";
 import { Mail, Lock, Eye, EyeOff, User, LogIn } from "lucide-react";
@@ -7,8 +8,11 @@ import OtpVerifyModal from "./OtpVerifyModal";
 import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
 import { API_URL } from "../lib/apiClient";
+import { validatePassword } from "../lib/validatePassword";
+import PasswordStrengthBar from "../components/PasswordStrengthBar";
 
 export default function AuthModal({ isOpen, onClose, onOtpStart }) {
+    const passwordRef = useRef(null);
     const { t } = useTranslation();
     const [isRegister, setIsRegister] = useState(false);
     const [formData, setFormData] = useState({
@@ -17,6 +21,11 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
         email: "",
         password: "",
     });
+    const [passwordCheck, setPasswordCheck] = useState({
+        isValid: false,
+        rules: { length: false, upper: false, number: false, special: false },
+    });
+
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showSetPassword, setShowSetPassword] = useState(false);
@@ -32,8 +41,14 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
     if (!isOpen) return null;
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+
+        if (name === "password") {
+            setPasswordCheck(validatePassword(value));
+        }
     };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,19 +56,33 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
 
         try {
             if (isRegister) {
+                if (!passwordCheck.isValid) {
+                    if (passwordRef.current) {
+                        passwordRef.current.focus(); // 👈 спочатку сфокусувати
+                        passwordRef.current.setCustomValidity(
+                          t("password_invalid") ||
+                          "Пароль має містити мінімум 6 символів, одну велику літеру, цифру та спецсимвол"
+                        );
+                        passwordRef.current.reportValidity(); // 👈 тепер з'явиться popup саме біля пароля
+                        setTimeout(() => passwordRef.current.setCustomValidity(""), 3000);
+                    }
+                    setLoading(false);
+                    return;
+                }
+
+
                 const res = await fetch(`${API_URL}/api/users/register`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData),
                 });
+
                 const data = await res.json();
 
                 if (res.ok) {
                     toast.success("📩 Код підтвердження надіслано на пошту!");
                     if (onOtpStart) onOtpStart(formData.email);
-                }
-
-                else {
+                } else {
                     toast.error(data.message || "❌ Помилка реєстрації");
                 }
             } else {
@@ -62,6 +91,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(formData),
                 });
+
                 const data = await res.json();
 
                 if (data.success) {
@@ -78,6 +108,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
             setLoading(false);
         }
     };
+
 
 
     const handleGoogleSuccess = async (credentialResponse) => {
@@ -107,6 +138,12 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
     };
 
     const handleSetPassword = async () => {
+        const { isValid } = validatePassword(newPassword);
+        if (!isValid) {
+            toast.error("Пароль має містити 6+ символів, велику літеру, цифру та спецсимвол");
+            return;
+        }
+
         try {
             const res = await fetch(`${API_URL}/api/users/set-password`, {
                 method: "POST",
@@ -240,7 +277,8 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                             <div className="relative">
                                 <Lock size={18} className="absolute left-3 top-3 text-gray-400" />
                                 <input
-                                    name="password"
+                                  ref={passwordRef}
+                                  name="password"
                                     type={showPassword ? "text" : "password"}
                                     placeholder={t("form_password")}
                                     value={formData.password}
@@ -248,6 +286,10 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                                     className="w-full bg-gray-800 rounded-lg pl-10 pr-10 py-2 focus:ring-2 focus:ring-green-600"
                                     required
                                 />
+                                {isRegister && <PasswordStrengthBar password={formData.password} />}
+
+
+
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
@@ -259,7 +301,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
 
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || (isRegister && !passwordCheck.isValid)}
                                 className="w-full bg-green-600 hover:bg-green-700 transition text-white py-2 rounded-lg font-semibold shadow-lg"
                             >
                                 {loading
@@ -270,17 +312,17 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                             </button>
                         </form>
 
-                        {!isRegister && (
-                            <p className="text-center text-sm mt-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForgot(true)}
-                                    className="text-green-400 hover:underline"
-                                >
-                                    Забули пароль?
-                                </button>
-                            </p>
-                        )}
+                    {!isRegister && (
+                      <p className="text-center text-sm mt-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowForgot(true)}
+                            className="text-green-400 hover:underline"
+                          >
+                              {t("forgot_password_button", "Забули пароль?")}
+                          </button>
+                      </p>
+                    )}
 
                         <div className="flex items-center my-6">
                             <div className="flex-1 h-px bg-gray-700"></div>
@@ -354,54 +396,61 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
             {/* 🔹 Модалка "Забув пароль" */}
             {showForgot && (
               <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] backdrop-blur-sm">
+                  <motion.div
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-gray-900 text-gray-200 rounded-2xl shadow-2xl p-8 w-full max-w-sm border border-gray-700"
+                  >
+                      <h3 className="text-xl font-semibold text-center mb-4 text-green-400">
+                          🔐 {t("forgot_password_title", "Відновлення пароля")}
+                      </h3>
 
-              <motion.div
-                        initial={{ y: 50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="bg-gray-900 text-gray-200 rounded-2xl shadow-2xl p-8 w-full max-w-sm border border-gray-700"
-                    >
-                        <h3 className="text-xl font-semibold text-center mb-4 text-green-400">
-                            🔐 Відновлення пароля
-                        </h3>
+                      <p className="text-sm text-gray-400 text-center mb-4">
+                          {t(
+                            "forgot_password_subtitle",
+                            "Введіть вашу пошту, і ми надішлемо інструкцію для зміни пароля."
+                          )}
+                      </p>
 
-                        <p className="text-sm text-gray-400 text-center mb-4">
-                            Введіть вашу пошту, і ми надішлемо інструкцію для зміни пароля.
+                      <form onSubmit={handleForgotPassword} className="space-y-3">
+                          <input
+                            type="email"
+                            placeholder={
+                                t("forgot_password_placeholder", "Ваша електронна пошта")
+                            }
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            required
+                            className="w-full bg-gray-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600"
+                          />
+                          <button
+                            type="submit"
+                            disabled={sending}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
+                          >
+                              {sending
+                                ? t("forgot_password_sending", "Надсилання...")
+                                : t("forgot_password_send_btn", "Надіслати лист")}
+                          </button>
+                      </form>
+
+                      {resetMessage && (
+                        <p className="text-center text-sm mt-3 text-gray-300 bg-gray-800/50 rounded-lg p-2">
+                            {resetMessage}
                         </p>
+                      )}
 
-                        <form onSubmit={handleForgotPassword} className="space-y-3">
-                            <input
-                                type="email"
-                                placeholder="Ваша електронна пошта"
-                                value={resetEmail}
-                                onChange={(e) => setResetEmail(e.target.value)}
-                                required
-                                className="w-full bg-gray-800 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-green-600"
-                            />
-                            <button
-                                type="submit"
-                                disabled={sending}
-                                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
-                            >
-                                {sending ? "Надсилання..." : "Надіслати лист"}
-                            </button>
-                        </form>
-
-                        {resetMessage && (
-                            <p className="text-center text-sm mt-3 text-gray-300 bg-gray-800/50 rounded-lg p-2">
-                                {resetMessage}
-                            </p>
-                        )}
-
-                        <button
-                            onClick={() => setShowForgot(false)}
-                            className="mt-4 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-lg"
-                        >
-                            Назад
-                        </button>
-                    </motion.div>
-                </div>
+                      <button
+                        onClick={() => setShowForgot(false)}
+                        className="mt-4 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-lg"
+                      >
+                          {t("forgot_password_back_btn", "Назад")}
+                      </button>
+                  </motion.div>
+              </div>
             )}
+
         </>
     );
 }

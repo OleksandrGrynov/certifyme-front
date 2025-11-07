@@ -7,7 +7,15 @@
     "profile": "Profile",
     "contact": "Contact Us"
   },
-
+  "recover_via_email": "Recover password via email",
+  "forgot_password_button": "Forgot password?",
+  "forgot_password_title": "Password recovery",
+  "forgot_password_subtitle": "Enter your email, and we’ll send you instructions to reset your password.",
+  "forgot_password_placeholder": "Your email address",
+  "forgot_password_sending": "Sending...",
+  "forgot_password_send_btn": "Send email",
+  "forgot_password_back_btn": "Back",
+"password_invalid": "Password must include at least 6 characters, one uppercase letter, a number, and a special symbol",
   "welcome_title": "your platform for knowledge verification",
   "welcome_subtitle": "Take online tests, prove your skills, and get an official PDF certificate with a QR code after payment. Fast, secure, and convenient.",
   "btn_view_courses": "Take a Test",

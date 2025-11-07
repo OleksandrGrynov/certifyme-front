@@ -7,6 +7,19 @@
     "profile": "Профіль",
     "contact": "Зв’язатися"
   },
+
+  "forgot_password_button": "Забули пароль?",
+  "forgot_password_title": "Відновлення пароля",
+  "forgot_password_subtitle": "Введіть вашу пошту, і ми надішлемо інструкцію для зміни пароля.",
+  "forgot_password_placeholder": "Ваша електронна пошта",
+  "forgot_password_sending": "Надсилання...",
+  "forgot_password_send_btn": "Надіслати лист",
+  "forgot_password_back_btn": "Назад",
+  "recover_via_email": "Відновити пароль через пошту",
+
+
+
+"password_invalid": "Пароль має містити мінімум 6 символів, одну велику літеру, цифру та спецсимвол",
   "systemManagement": "Системне керування",
   "systemStatus": "Стан системи",
   "apiVersion": "Версія API",

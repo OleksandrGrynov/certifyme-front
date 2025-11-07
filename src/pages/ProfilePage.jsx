@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
 import { API_URL } from "../lib/apiClient";
+import { validatePassword } from "../lib/validatePassword";
+import PasswordStrengthBar from "../components/PasswordStrengthBar";
 
 const successSound = new Audio("/success.mp3");
 const errorSound = new Audio("/error.mp3");
@@ -13,6 +15,10 @@ const warningSound = new Audio("/warning.mp3");
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [passwordCheck, setPasswordCheck] = useState({
+    isValid: false,
+    rules: { length: false, upper: false, number: false, special: false },
+  });
 
   const [user, setUser] = useState({
     first_name: "",
@@ -259,8 +265,9 @@ export default function ProfilePage() {
               onClick={handleForgotPassword}
               className="w-full bg-indigo-600 hover:bg-indigo-700 transition text-white py-2 rounded-lg"
             >
-              🔐 Відновити пароль через пошту
+              🔐 {t("recover_via_email", "Відновити пароль через пошту")}
             </button>
+
           </div>
         )}
 
@@ -282,10 +289,16 @@ export default function ProfilePage() {
               type="password"
               placeholder={t("new_password") || "Новий пароль"}
               value={passwords.new}
-              onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setPasswords({ ...passwords, new: value });
+                setPasswordCheck(validatePassword(value));
+              }}
               className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
               required
             />
+            <PasswordStrengthBar password={passwords.new} />
+
 
             <input
               type="password"
@@ -298,10 +311,16 @@ export default function ProfilePage() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 transition text-white py-2 rounded-lg"
+              disabled={!passwordCheck.isValid}
+              className={`w-full transition text-white py-2 rounded-lg ${
+                passwordCheck.isValid
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-700 cursor-not-allowed"
+              }`}
             >
               {t("confirm") || "Підтвердити"}
             </button>
+
           </form>
         )}
 
