@@ -56,13 +56,51 @@ export default function TestPage() {
       localStorage.setItem(`explanations_${id}`, JSON.stringify(explanations));
   }, [explanations, id]);
 
-  // Завантаження тесту
+  // Завантаження тесту з авторизацією
   useEffect(() => {
-    fetch(`${API_URL}/api/tests/${id}`)
-      .then((r) => r.json())
-      .then((data) => data.success && setTest(data.test))
-      .catch((err) => console.error("❌ Помилка завантаження тесту:", err));
+    const loadTest = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`${API_URL}/api/tests/${id}`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            tToast.error(
+              "⛔ Спочатку увійдіть у свій акаунт",
+              "⛔ Please sign in first"
+            );
+          } else if (res.status === 403) {
+            tToast.error(
+              "💳 Спочатку оплатіть тест",
+              "💳 Please purchase the test first"
+            );
+            // 🔁 Через 2 секунди повертаємо на сторінку списку тестів
+            setTimeout(() => (window.location.href = "/tests"), 1000);
+          } else {
+            tToast.error("❌ Помилка доступу", "❌ Access error");
+          }
+
+          setTest(null);
+          return;
+        }
+
+
+        const data = await res.json();
+        if (data.success) setTest(data.test);
+      } catch (err) {
+        console.error("❌ Помилка завантаження тесту:", err);
+        tToast.error("❌ Сервер недоступний", "❌ Server unavailable");
+      }
+    };
+
+    loadTest();
   }, [id]);
+
 
   const getText = (item, field) =>
     item?.[`${field}_${lang}`] || item?.[`${field}_ua`] || "";
@@ -381,40 +419,58 @@ export default function TestPage() {
 
         {!submitted ? (
           <>
-            {test.questions.map((q, idx) => (
-              <motion.div
-                key={q.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-gray-800 p-5 rounded-xl mb-5 border border-gray-700 hover:border-green-600 transition"
-              >
-                <h3 className="font-semibold mb-3 text-lg">
-                  {getText(q, "question")}
-                </h3>
-                {q.answers.map((a) => {
-                  const selected = (answers[q.id] || []).includes(a.id);
-                  return (
-                    <label
-                      key={a.id}
-                      className={`block mb-2 p-2 rounded transition ${
-                        selected ? "bg-green-700/20" : "hover:bg-gray-700/40"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={(e) =>
-                          handleSelect(q.id, a.id, e.target.checked)
-                        }
-                        className="mr-2 accent-green-500"
-                      />
-                      {getText(a, "answer")?.trim() || "(empty option)"}
-                    </label>
-                  );
-                })}
-              </motion.div>
-            ))}
+            {Array.isArray(test?.questions) && test.questions.length > 0 ? (
+              test.questions.map((q, idx) => (
+                <motion.div
+                  key={q.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="bg-gray-800 p-5 rounded-xl mb-5 border border-gray-700 hover:border-green-600 transition"
+                >
+                  <h3 className="font-semibold mb-3 text-lg">
+                    {getText(q, "question")}
+                  </h3>
+
+                  {Array.isArray(q.answers) && q.answers.length > 0 ? (
+                    q.answers.map((a) => {
+                      const selected = (answers[q.id] || []).includes(a.id);
+                      return (
+                        <label
+                          key={a.id}
+                          className={`block mb-2 p-2 rounded transition ${
+                            selected ? "bg-green-700/20" : "hover:bg-gray-700/40"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(e) =>
+                              handleSelect(q.id, a.id, e.target.checked)
+                            }
+                            className="mr-2 accent-green-500"
+                          />
+                          {getText(a, "answer")?.trim() || "(empty option)"}
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-400 italic">
+                      {lang === "ua"
+                        ? "Варіанти відповідей відсутні"
+                        : "No answer options available"}
+                    </p>
+                  )}
+                </motion.div>
+              ))
+            ) : (
+              <p className="text-center text-gray-400 mt-4">
+                {lang === "ua"
+                  ? "Питання відсутні або тест недоступний."
+                  : "Questions are missing or test unavailable."}
+              </p>
+            )}
+
 
             <motion.button
               whileHover={{ scale: 1.02 }}

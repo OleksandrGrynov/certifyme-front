@@ -189,7 +189,7 @@ export default function ContactModal({ isOpen, onClose }) {
                                   name="message"
                                   value={form.message}
                                   onChange={handleChange}
-                                  placeholder={t("placeholder_email")}
+                                  placeholder={t("placeholder_message")}
                                   rows={3}
                                   required
                                   className={`w-full bg-[#1a1a1c] border rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none transition-all duration-200 ${

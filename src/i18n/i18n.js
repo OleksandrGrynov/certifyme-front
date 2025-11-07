@@ -12,15 +12,20 @@ i18n
       en: { translation: en },
       ua: { translation: ua },
     },
-
     fallbackLng: "ua",
 
     detection: {
-      order: ["localStorage", "navigator", "htmlTag"],
+      order: ["localStorage", "htmlTag", "navigator"],
       caches: ["localStorage"],
     },
 
     interpolation: { escapeValue: false },
+
+    react: {
+      useSuspense: true,
+    },
+
+    initImmediate: false,
   });
 
 export default i18n;

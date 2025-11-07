@@ -141,7 +141,8 @@ export default function TestDetailsPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetch(`${API_URL}/api/tests/${id}`)
+    // Використовуємо публічний маршрут без авторизації
+    fetch(`${API_URL}/api/tests/public/${id}`)
       .then((r) => r.json())
       .then((data) => {
         if (!mounted) return;
@@ -164,7 +165,8 @@ export default function TestDetailsPage() {
       })
       .finally(() => mounted && setLoading(false));
     return () => (mounted = false);
-  }, [id, inferTagsLocal]);
+  }, [id]);
+
 
   useEffect(() => {
     if (!token) return;

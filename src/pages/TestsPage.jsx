@@ -19,26 +19,38 @@ export default function TestsPage() {
   const navigate = useNavigate();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  // 🧩 Завантаження тестів і доступів користувача
   const loadTests = useCallback(async () => {
     try {
       setLoading(true);
+
+      // 🧾 1. Отримуємо список усіх тестів
       const testsRes = await fetch(`${API_URL}/api/tests?lang=${i18n.language}`);
       const testsJson = await testsRes.json();
       setTests(testsJson?.tests || []);
 
-      const ownedRes = await fetch(`${API_URL}/api/user/tests`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const ownedJson = ownedRes.ok ? await ownedRes.json() : { testIds: [] };
-      const ids = (ownedJson.testIds || []).map(Number);
-      setOwnedIds(new Set(ids));
+      // 🔐 2. Якщо користувач увійшов — завантажуємо тести, які йому належать
+      if (token) {
+        const ownedRes = await fetch(`${API_URL}/api/user/tests`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (ownedRes.ok) {
+          const ownedJson = await ownedRes.json();
+          const ids = (ownedJson.testIds || []).map(Number);
+          setOwnedIds(new Set(ids));
+        } else {
+          setOwnedIds(new Set());
+        }
+      } else {
+        setOwnedIds(new Set());
+      }
     } catch (err) {
       console.error("❌ Fetch tests error:", err);
     } finally {
       setLoading(false);
     }
   }, [i18n.language, token]);
+
 
   // 🧾 Завантаження пройдених тестів користувача
   const loadPassedTests = useCallback(async () => {
@@ -365,6 +377,16 @@ export default function TestsPage() {
                             );
                             const data = await res.json();
                             if (data.hasAccess) {
+                              const check = await fetch(`${API_URL}/api/tests/${test.id}`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                              });
+
+                              if (!check.ok) {
+                                const errData = await check.json();
+                                tToast.error(errData.message || "Доступ заборонено", "Access denied");
+                                return;
+                              }
+
                               window.location.href = `/tests/${test.id}`;
                             } else {
                               tToast.error(
@@ -372,6 +394,7 @@ export default function TestsPage() {
                                 "💳 Please purchase the test first!"
                               );
                             }
+
                           } catch {
                             tToast.error("Помилка перевірки доступу", "Access check error");
                           }
