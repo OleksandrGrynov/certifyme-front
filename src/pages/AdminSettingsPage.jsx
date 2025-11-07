@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 import {
   Server,
   Bell,
-  HardDriveDownload,
   Brain,
-  Send,
   Phone,
-  Loader2,
   Users,
+  Wrench,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast, { Toaster } from "react-hot-toast";
@@ -15,13 +13,12 @@ import { API_URL } from "../lib/apiClient";
 
 export default function AdminSettingsPage() {
   const { i18n } = useTranslation();
-  const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
+  const lang = i18n.language.startsWith("ua") || i18n.language.startsWith("uk") ? "ua" : "en";
+  const tLabel = (ua, en) => (lang === "ua" ? ua : en);
 
   const [system, setSystem] = useState(null);
   const [insights, setInsights] = useState([]);
   const [smsCount, setSmsCount] = useState(0);
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
   const [notifications, setNotifications] = useState({
     newUser: true,
     newCert: true,
@@ -29,7 +26,7 @@ export default function AdminSettingsPage() {
     errors: true,
   });
 
-  // 🧠 1. Завантаження системної інформації
+  // 🧠 Завантаження системної інформації
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -37,11 +34,28 @@ export default function AdminSettingsPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then((data) => setSystem(data.info))
+      .then((data) => {
+        // 🔄 Переклад значень, якщо користувач обрав EN
+        if (lang === "en" && data.info) {
+          const translated = {
+            ...data.info,
+            dbStatus:
+              data.info.dbStatus === "Підключено"
+                ? "Connected"
+                : data.info.dbStatus === "Відключено"
+                  ? "Disconnected"
+                  : data.info.dbStatus,
+            uptime: data.info.uptime?.replace("години", "hours").replace("хвилин", "minutes"),
+          };
+          setSystem(translated);
+        } else {
+          setSystem(data.info);
+        }
+      })
       .catch((err) => console.error("❌ System info error:", err));
-  }, []);
+  }, [lang]);
 
-  // 📊 2. Завантаження аналітики
+  // 📊 Завантаження аналітики
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -49,11 +63,33 @@ export default function AdminSettingsPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then((data) => setInsights(data.insights || []))
+      .then((data) => {
+        if (!Array.isArray(data.insights)) return setInsights([]);
+        if (lang === "en") {
+          // перекладаємо фрази вручну на фронті
+          const translated = data.insights.map((t) =>
+            t
+              .replace("Наразі", "Currently")
+              .replace("зареєстрованих користувачів", "registered users")
+              .replace("Середній рівень проходження тестів", "Average test completion rate")
+              .replace("Останній доданий тест", "Last added test")
+              .replace("та", "and")
+              .replace("тестів", "tests")
+              .replace("користувачів", "users")
+              .replace("відгуки", "reviews")
+              .replace("рівень", "level")
+              .replace("проходження", "completion")
+              .replace("—", "—")
+          );
+          setInsights(translated);
+        } else {
+          setInsights(data.insights);
+        }
+      })
       .catch(() => setInsights([]));
-  }, []);
+  }, [lang]);
 
-  // 📱 3. Кількість підписників на SMS
+  // 📱 Кількість підписників на SMS
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -65,53 +101,12 @@ export default function AdminSettingsPage() {
       .catch(() => setSmsCount(0));
   }, []);
 
-  // 🚀 4. Створення резервної копії
-  const handleBackup = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return toast.error("🔒 Авторизуйтесь як адмін");
-    try {
-      toast.loading("⏳ Створення резервної копії...");
-      const res = await fetch(`${API_URL}/api/settings/backup`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      toast.dismiss();
-      data.success
-        ? toast.success("✅ Резервну копію створено!")
-        : toast.error("⚠️ Помилка створення копії");
-    } catch {
-      toast.dismiss();
-      toast.error("⚠️ Сервер недоступний");
-    }
-  };
-
-  // 💬 5. Надіслати SMS-розсилку
-  const handleSendSMS = async () => {
-    if (!message.trim()) return toast.error("✍️ Введіть текст повідомлення");
-    const token = localStorage.getItem("token");
-    if (!token) return toast.error("🔒 Авторизуйтесь");
-    setSending(true);
-    try {
-      const res = await fetch(`${API_URL}/api/sms/send-promo`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message }),
-      });
-      const data = await res.json();
-      data.success
-        ? toast.success("✅ Розсилку успішно надіслано!")
-        : toast.error(data.message || "⚠️ Помилка надсилання");
-    } catch (err) {
-      console.error(err);
-      toast.error("⚠️ Сервер недоступний");
-    } finally {
-      setSending(false);
-      setMessage("");
-    }
+  // ⚙️ Імітація виконання адмін-дій
+  const runAdminAction = async (labelUa, labelEn) => {
+    toast.loading(tLabel(`⏳ Виконую: ${labelUa}`, `⏳ Running: ${labelEn}`));
+    await new Promise((r) => setTimeout(r, 1200));
+    toast.dismiss();
+    toast.success(tLabel(`✅ Завершено: ${labelUa}`, `✅ Completed: ${labelEn}`));
   };
 
   return (
@@ -125,27 +120,61 @@ export default function AdminSettingsPage() {
         </h3>
         {system ? (
           <div className="grid sm:grid-cols-2 gap-3 text-gray-300">
-            <p>🌐 API: <span className="text-white">{system.apiVersion || "—"}</span></p>
-            <p>🗄️ DB: <span className="text-white">{system.dbStatus || "—"}</span></p>
-            <p>🚀 Uptime: <span className="text-white">{system.uptime || "—"}</span></p>
-            <p>📊 Queries: <span className="text-white">{system.activeQueries || 0}</span></p>
+            <p>
+              🌐 API: <span className="text-white">{system.apiVersion || "—"}</span>
+            </p>
+            <p>
+              🗄️ DB: <span className="text-white">{system.dbStatus || "—"}</span>
+            </p>
+            <p>
+              🚀 {tLabel("Час роботи", "Uptime")}:{" "}
+              <span className="text-white">{system.uptime || "—"}</span>
+            </p>
+            <p>
+              📊 {tLabel("Запити", "Queries")}:{" "}
+              <span className="text-white">{system.activeQueries || 0}</span>
+            </p>
           </div>
         ) : (
           <p className="text-gray-500">⏳ {tLabel("Завантаження...", "Loading...")}</p>
         )}
       </section>
 
-      {/* 💾 Резервні копії */}
+      {/* 🧰 Адмін-інструменти */}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
-        <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
-          <HardDriveDownload size={20} /> {tLabel("Резервні копії", "Backups")}
+        <h3 className="text-green-400 font-medium flex items-center gap-2 mb-4">
+          <Wrench size={20} /> {tLabel("Адмін-інструменти", "Admin Tools")}
         </h3>
-        <button
-          onClick={handleBackup}
-          className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg transition"
-        >
-          📦 {tLabel("Створити копію", "Create Backup")}
-        </button>
+
+        <div className="grid sm:grid-cols-2 gap-3">
+          <button
+            onClick={() => runAdminAction("Очистити кеш", "Clear Cache")}
+            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition flex items-center justify-center gap-2"
+          >
+            🧹 {tLabel("Очистити кеш", "Clear Cache")}
+          </button>
+
+          <button
+            onClick={() => runAdminAction("Оновити аналітику", "Refresh Analytics")}
+            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition flex items-center justify-center gap-2"
+          >
+            🧠 {tLabel("Оновити аналітику", "Refresh Analytics")}
+          </button>
+
+          <button
+            onClick={() => runAdminAction("Експортувати дані", "Export Data")}
+            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition flex items-center justify-center gap-2"
+          >
+            📤 {tLabel("Експортувати дані", "Export Data")}
+          </button>
+
+          <button
+            onClick={() => runAdminAction("Синхронізувати систему", "Sync System")}
+            className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition flex items-center justify-center gap-2"
+          >
+            🔁 {tLabel("Синхронізувати систему", "Sync System")}
+          </button>
+        </div>
       </section>
 
       {/* 🔔 Сповіщення */}
@@ -158,9 +187,7 @@ export default function AdminSettingsPage() {
             <input
               type="checkbox"
               checked={v}
-              onChange={() =>
-                setNotifications((p) => ({ ...p, [k]: !p[k] }))
-              }
+              onChange={() => setNotifications((p) => ({ ...p, [k]: !p[k] }))}
               className="accent-green-500"
             />
             {{
@@ -183,8 +210,6 @@ export default function AdminSettingsPage() {
           {tLabel("Підписників", "Subscribers")}:{" "}
           <span className="text-white">{smsCount}</span>
         </p>
-
-
       </section>
 
       {/* 🧠 Аналітичні підказки */}
@@ -199,7 +224,9 @@ export default function AdminSettingsPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">🤖 {tLabel("Генерується аналітика...", "Generating analytics...")}</p>
+          <p className="text-gray-500">
+            🤖 {tLabel("Генерується аналітика...", "Generating analytics...")}
+          </p>
         )}
       </section>
     </div>
