@@ -156,62 +156,76 @@ export default function MyCertificates() {
         </h1>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {certs.map((cert, i) => (
-            <motion.div
-              key={cert.cert_id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg hover:shadow-green-500/10 transition flex flex-col h-full"
-            >
-              <div className="w-full h-28 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 rounded-lg mb-3 flex items-center justify-center">
-                <span className="text-sm text-gray-300 uppercase tracking-wider">
-                  {tLabel("Сертифікат", "Certificate")}
-                </span>
-              </div>
+          {certs.map((cert, i) => {
+            const isExpired = new Date(cert.expires) < new Date(); // ✅ додаємо перевірку
 
-              <h2 className="text-xl font-semibold text-green-400 mb-2">
-                {i18n.language === "ua"
-                  ? cert.course_ua || cert.course
-                  : cert.course_en || cert.course}
-              </h2>
-              <p className="text-gray-400 text-sm mb-3">ID: {cert.cert_id}</p>
-              <p className="text-gray-300 text-sm">
-                📅 {tLabel("Виданий", "Issued")}:{" "}
-                {new Date(cert.issued).toLocaleDateString(
-                  i18n.language === "ua" ? "uk-UA" : "en-US",
+            return (
+              <motion.div
+                key={cert.cert_id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`bg-gray-900 border ${
+                  isExpired ? "border-red-700" : "border-gray-700"
+                } rounded-xl p-6 shadow-lg hover:shadow-green-500/10 transition flex flex-col h-full`}
+              >
+                <div className="w-full h-28 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 rounded-lg mb-3 flex items-center justify-center">
+        <span className="text-sm text-gray-300 uppercase tracking-wider">
+          {tLabel("Сертифікат", "Certificate")}
+        </span>
+                </div>
+
+                <h2 className={`text-xl font-semibold mb-2 ${isExpired ? "text-red-400" : "text-green-400"}`}>
+                  {i18n.language === "ua"
+                    ? cert.course_ua || cert.course
+                    : cert.course_en || cert.course}
+                </h2>
+                <p className="text-gray-400 text-sm mb-3">ID: {cert.cert_id}</p>
+                <p className="text-gray-300 text-sm">
+                  📅 {tLabel("Виданий", "Issued")}:{" "}
+                  {new Date(cert.issued).toLocaleDateString(
+                    i18n.language === "ua" ? "uk-UA" : "en-US",
+                  )}
+                </p>
+                <p className="text-gray-300 text-sm">
+                  ⏳ {tLabel("Діє до", "Valid until")}:{" "}
+                  {new Date(cert.expires).toLocaleDateString(
+                    i18n.language === "ua" ? "uk-UA" : "en-US",
+                  )}
+                </p>
+                <p className="text-gray-300 text-sm mb-4">
+                  {tLabel("Результат", "Result")}: {cert.percent}%
+                </p>
+
+                {/* ✅ Якщо сертифікат прострочений */}
+                {isExpired ? (
+                  <div className="mt-auto bg-red-800/40 border border-red-600 text-red-300 px-3 py-2 rounded-md text-center font-semibold">
+                    {tLabel("❌ Сертифікат недійсний", "❌ Certificate expired")}
+                  </div>
+                ) : (
+                  <div className="flex gap-3 mt-auto">
+                    <a
+                      href={`https://www.certifyme.me/verify/${cert.cert_id}`}
+                      className="flex-1 bg-green-600 hover:bg-green-700 px-3 py-2 text-center rounded-md text-sm font-semibold transition"
+                    >
+                      {tLabel("Перевірити", "Verify")}
+                    </a>
+
+                    <button
+                      onClick={() => downloadCertificate(cert.cert_id)}
+                      disabled={!!downloading[cert.cert_id]}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md text-sm transition text-white disabled:opacity-60"
+                    >
+                      {downloading[cert.cert_id]
+                        ? tLabel("Завантаження...", "Downloading...")
+                        : tLabel("Завантажити", "Download")}
+                    </button>
+                  </div>
                 )}
-              </p>
-              <p className="text-gray-300 text-sm">
-                ⏳ {tLabel("Діє до", "Valid until")}:{" "}
-                {new Date(cert.expires).toLocaleDateString(
-                  i18n.language === "ua" ? "uk-UA" : "en-US",
-                )}
-              </p>
-              <p className="text-gray-300 text-sm mb-4">
-                {tLabel("Результат", "Result")}: {cert.percent}%
-              </p>
+              </motion.div>
+            );
+          })}
 
-              <div className="flex gap-3 mt-auto">
-                <a
-                  href={`https://www.certifyme.me/verify/${cert.cert_id}`}
-                  className="flex-1 bg-green-600 hover:bg-green-700 px-3 py-2 text-center rounded-md text-sm font-semibold transition"
-                >
-                  {tLabel("Перевірити", "Verify")}
-                </a>
-
-                <button
-                  onClick={() => downloadCertificate(cert.cert_id)}
-                  disabled={!!downloading[cert.cert_id]}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md text-sm transition text-white disabled:opacity-60"
-                >
-                  {downloading[cert.cert_id]
-                    ? tLabel("Завантаження...", "Downloading...")
-                    : tLabel("Завантажити", "Download")}
-                </button>
-              </div>
-            </motion.div>
-          ))}
         </div>
       </div>
     </section>

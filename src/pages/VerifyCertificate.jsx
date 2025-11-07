@@ -13,7 +13,14 @@ export default function VerifyCertificate() {
   useEffect(() => {
     const loadCert = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/tests/certificates/${cert_id}`);
+        // 🔹 додаємо поточну мову до запиту
+        const res = await fetch(
+          `${API_URL}/api/tests/certificates/${cert_id}?lang=${i18n.language}`,
+          {
+            headers: { "Accept-Language": i18n.language },
+          }
+        );
+
         const data = await res.json();
         setCert(data);
       } catch (err) {
@@ -24,7 +31,8 @@ export default function VerifyCertificate() {
       }
     };
     loadCert();
-  }, [cert_id]);
+  }, [cert_id, i18n.language]);
+
 
   const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
 
