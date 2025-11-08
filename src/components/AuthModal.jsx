@@ -197,7 +197,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/70 z-[9999] backdrop-blur-sm flex justify-center items-center">
+            <div className="fixed inset-0 bg-black/70 z-[9999] flex justify-center items-center">
 
             <AnimatePresence>
                 <motion.div
@@ -363,7 +363,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
 
             {/* 🔹 Модалка створення пароля після Google */}
             {showSetPassword && (
-              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] backdrop-blur-sm">
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]">
 
               <motion.div
                         initial={{ y: 100, opacity: 0 }}
@@ -375,15 +375,26 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                             {t("create_password_title")}
                         </h3>
 
-                        <input
-                            type="password"
-                            placeholder={t("create_password_placeholder")}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full bg-gray-800 rounded-lg px-3 py-2 mb-4 focus:ring-2 focus:ring-green-600"
-                        />
+                  <div className="relative mb-3">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder={t("create_password_placeholder")}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full bg-gray-800 rounded-lg px-3 pr-10 py-2 focus:ring-2 focus:ring-green-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-200"
+                      >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                      <PasswordStrengthBar password={newPassword} />
+                  </div>
 
-                        <button
+
+                  <button
                             onClick={handleSetPassword}
                             className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
                         >
@@ -395,7 +406,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
 
             {/* 🔹 Модалка "Забув пароль" */}
             {showForgot && (
-              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] backdrop-blur-sm">
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]">
                   <motion.div
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}

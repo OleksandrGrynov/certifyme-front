@@ -22,7 +22,7 @@ export default function Layout() {
     <div className="flex flex-col min-h-screen">
       {/* 🔔 Глобальні тости */}
       <Toaster
-        position="bottom-center"
+        position="top-center"
         toastOptions={{
           duration: 4000,
           style: {
@@ -34,6 +34,7 @@ export default function Layout() {
             fontSize: "15px",
             transform: "scale(1)",
             transition: "all 0.3s ease",
+            zIndex: 999999,
           },
           success: { iconTheme: { primary: "#22c55e", secondary: "#1e293b" } },
           error: { iconTheme: { primary: "#ef4444", secondary: "#1e293b" } },

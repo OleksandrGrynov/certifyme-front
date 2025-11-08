@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, User, Save, Lock } from "lucide-react";
+import { LogOut, User, Save, Lock,Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import tToast from "../lib/tToast";
@@ -65,6 +65,11 @@ export default function ProfilePage() {
       })
       .catch((err) => console.error("❌ Profile fetch error:", err));
   }, [navigate, token]);
+  const [showPasswords, setShowPasswords] = useState({
+    old: false,
+    new: false,
+    confirm: false,
+  });
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
@@ -276,38 +281,75 @@ export default function ProfilePage() {
             onSubmit={handlePasswordChange}
             className="mt-6 text-left space-y-3 border-t border-gray-700 pt-4"
           >
-            <input
-              type="password"
-              placeholder={t("old_password") || "Старий пароль"}
-              value={passwords.old}
-              onChange={(e) => setPasswords({ ...passwords, old: e.target.value })}
-              className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
-              required
-            />
+            {/* Старий пароль */}
+            <div className="relative">
+              <input
+                type={showPasswords.old ? "text" : "password"}
+                placeholder={t("old_password") || "Старий пароль"}
+                value={passwords.old}
+                onChange={(e) => setPasswords({ ...passwords, old: e.target.value })}
+                className="w-full bg-gray-800 rounded-lg px-3 pr-10 py-2 focus:ring-2 focus:ring-blue-600"
+                required
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPasswords((p) => ({ ...p, old: !p.old }))
+                }
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-200"
+              >
+                {showPasswords.old ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
 
-            <input
-              type="password"
-              placeholder={t("new_password") || "Новий пароль"}
-              value={passwords.new}
-              onChange={(e) => {
-                const value = e.target.value;
-                setPasswords({ ...passwords, new: value });
-                setPasswordCheck(validatePassword(value));
-              }}
-              className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
-              required
-            />
-            <PasswordStrengthBar password={passwords.new} />
+            {/* Новий пароль */}
+            <div className="relative">
+              <input
+                type={showPasswords.new ? "text" : "password"}
+                placeholder={t("new_password") || "Новий пароль"}
+                value={passwords.new}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPasswords({ ...passwords, new: value });
+                  setPasswordCheck(validatePassword(value));
+                }}
+                className="w-full bg-gray-800 rounded-lg px-3 pr-10 py-2 focus:ring-2 focus:ring-blue-600"
+                required
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPasswords((p) => ({ ...p, new: !p.new }))
+                }
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-200"
+              >
+                {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+              <PasswordStrengthBar password={passwords.new} />
+            </div>
 
-
-            <input
-              type="password"
-              placeholder={t("confirm_password") || "Підтвердьте пароль"}
-              value={passwords.confirm}
-              onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-              className="w-full bg-gray-800 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-600"
-              required
-            />
+            {/* Підтвердження пароля */}
+            <div className="relative">
+              <input
+                type={showPasswords.confirm ? "text" : "password"}
+                placeholder={t("confirm_password") || "Підтвердьте пароль"}
+                value={passwords.confirm}
+                onChange={(e) =>
+                  setPasswords({ ...passwords, confirm: e.target.value })
+                }
+                className="w-full bg-gray-800 rounded-lg px-3 pr-10 py-2 focus:ring-2 focus:ring-blue-600"
+                required
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPasswords((p) => ({ ...p, confirm: !p.confirm }))
+                }
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-200"
+              >
+                {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
 
             <button
               type="submit"
@@ -320,9 +362,9 @@ export default function ProfilePage() {
             >
               {t("confirm") || "Підтвердити"}
             </button>
-
           </form>
         )}
+
 
         <button
           onClick={handleLogout}

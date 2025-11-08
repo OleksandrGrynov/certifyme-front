@@ -18,8 +18,17 @@ export default function AdminEditTestPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/tests/${id}`);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/api/tests/admin/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         const data = await res.json();
+
+        if (res.status === 401 || res.status === 403) {
+          console.error("⛔ Unauthorized. Token may be missing or expired.");
+        }
+
         if (data.success) {
           setEditingTest({
             ...data.test,
@@ -27,13 +36,17 @@ export default function AdminEditTestPage() {
             currency: data.test.currency || "usd",
             questions: data.test.questions || [],
           });
+        } else {
+          console.error("❌ Failed to load test:", data.message);
         }
       } catch (err) {
         console.error("❌ error loading test:", err);
       }
     };
+
     load();
   }, [id]);
+
 
   useEffect(() => {
     const loadRate = async () => {
