@@ -8,11 +8,11 @@ export default function Footer() {
 
   return (
     <footer className="relative z-10 bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-400 border-t border-gray-800 mt-0">
-      {/* Світіння зверху */}
+      {}
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-green-400/40 via-green-500/70 to-green-400/40 blur-[1px]" />
 
       <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
-        {/* 🔹 1. Лого */}
+        {}
         <div className="text-center sm:text-left">
           <h2 className="text-lg font-bold text-green-400">CertifyMe</h2>
           <p className="text-xs text-gray-400 mt-1 leading-relaxed">
@@ -23,7 +23,7 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* 🔹 2. Навігація */}
+        {}
         <div className="text-center">
           <h3 className="text-green-400 font-semibold mb-1">
             {tLabel("Навігація", "Navigation")}
@@ -52,7 +52,7 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* 🔹 3. Контакти */}
+        {}
         <div className="text-center sm:text-right">
           <h3 className="text-green-400 font-semibold mb-1">
             {tLabel("Зв’язок", "Contact")}
@@ -84,7 +84,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* 🔹 Нижній рядок */}
+      {}
       <div className="border-t border-gray-800/60 py-3 text-center text-xs text-gray-500 bg-gray-950/40 backdrop-blur-sm">
         <p>
           © {year} <span className="text-green-400 font-semibold">CertifyMe</span> —{" "}

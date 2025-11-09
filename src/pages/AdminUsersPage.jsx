@@ -11,7 +11,7 @@ export default function AdminUsersPage() {
 
     const [users, setUsers] = useState([]);
 
-    // 🔒 Модалка підтвердження
+    
     const [confirmState, setConfirmState] = useState({
         open: false,
         title: tLabel("Підтвердження", "Confirmation"),
@@ -38,7 +38,7 @@ export default function AdminUsersPage() {
         setConfirmState((s) => ({ ...s, open: false }));
     };
 
-    // 📥 Завантаження користувачів
+    
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) return;
@@ -53,7 +53,7 @@ export default function AdminUsersPage() {
           .catch((err) => console.error("❌ Error loading users:", err));
     }, []);
 
-    // 🗑️ Видалення користувача
+    
     const handleDeleteUser = async (id, email) => {
         const ok = await confirmAsync({
             title: tLabel("Підтвердження", "Confirmation"),
@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
         }
     };
 
-    // 🔁 Зміна ролі користувача
+    
     const handleChangeRole = async (id, newRole) => {
         const token = localStorage.getItem("token");
         const res = await fetch(`${API_URL}/api/admin/users/${id}`, {

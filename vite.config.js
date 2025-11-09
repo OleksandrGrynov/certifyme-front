@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   root: '.',
   build: {
-    outDir: 'dist', // обов’язково вказати для Vercel
+    outDir: 'dist', 
   },
-  base: '/', // потрібно для React Router, інакше 404 при оновленні сторінки
+  base: '/', 
 })

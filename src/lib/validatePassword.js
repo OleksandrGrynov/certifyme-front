@@ -1,4 +1,4 @@
-// src/lib/validatePassword.js
+
 export function validatePassword(password) {
   const rules = {
     length: password.length >= 6,

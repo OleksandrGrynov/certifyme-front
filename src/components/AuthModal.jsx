@@ -32,7 +32,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
     const [newPassword, setNewPassword] = useState("");
     const [showOtpModal, setShowOtpModal] = useState(false);
 
-    // 🔹 нові стани для "Забули пароль"
+    
     const [showForgot, setShowForgot] = useState(false);
     const [resetEmail, setResetEmail] = useState("");
     const [resetMessage, setResetMessage] = useState("");
@@ -58,12 +58,12 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
             if (isRegister) {
                 if (!passwordCheck.isValid) {
                     if (passwordRef.current) {
-                        passwordRef.current.focus(); // 👈 спочатку сфокусувати
+                        passwordRef.current.focus(); 
                         passwordRef.current.setCustomValidity(
                           t("password_invalid") ||
                           "Пароль має містити мінімум 6 символів, одну велику літеру, цифру та спецсимвол"
                         );
-                        passwordRef.current.reportValidity(); // 👈 тепер з'явиться popup саме біля пароля
+                        passwordRef.current.reportValidity(); 
                         setTimeout(() => passwordRef.current.setCustomValidity(""), 3000);
                     }
                     setLoading(false);
@@ -165,7 +165,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
         }
     };
 
-    // 🔹 Відправлення запиту "Забув пароль"
+    
     const handleForgotPassword = async (e) => {
         e.preventDefault();
         setSending(true);
@@ -330,7 +330,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                             <div className="flex-1 h-px bg-gray-700"></div>
                         </div>
 
-                        {/* 🔹 Google вхід (по центру) */}
+                        {}
                         <div className="flex justify-center mt-6">
                             <div className="w-full flex justify-center">
                                 <GoogleLogin
@@ -361,7 +361,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
 
 
 
-            {/* 🔹 Модалка створення пароля після Google */}
+            {}
             {showSetPassword && (
               <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]">
 
@@ -404,7 +404,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                 </div>
             )}
 
-            {/* 🔹 Модалка "Забув пароль" */}
+            {}
             {showForgot && (
               <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]">
                   <motion.div

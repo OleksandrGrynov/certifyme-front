@@ -22,7 +22,7 @@ export default function ContactModal({ isOpen, onClose }) {
         message: "",
     });
 
-    // 🧩 Форматування телефону
+    
     const formatPhone = (value) => {
         let digits = value.replace(/\D/g, "");
         if (!digits.startsWith("380")) digits = "380" + digits;
@@ -105,7 +105,7 @@ export default function ContactModal({ isOpen, onClose }) {
       <AnimatePresence>
           {isOpen && (
             <>
-                {/* затемнення */}
+                {}
                 <motion.div
                   className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
                   initial={{ opacity: 0 }}
@@ -114,7 +114,7 @@ export default function ContactModal({ isOpen, onClose }) {
                   onClick={onClose}
                 />
 
-                {/* модалка */}
+                {}
                 <motion.div
                   className="fixed inset-0 flex items-center justify-center z-50 p-4"
                   initial={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -182,7 +182,7 @@ export default function ContactModal({ isOpen, onClose }) {
                                 )}
                             </div>
 
-                            {/* 🆕 Поле повідомлення */}
+                            {}
                             <div>
                                 <label className="text-sm mb-1 block text-gray-300">{t("form_message")}</label>
                                 <textarea

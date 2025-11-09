@@ -67,7 +67,6 @@ async function stripJsComments(file) {
     const { code } = generate.default(ast, { comments: false, retainLines: true }, src);
     return code;
   } catch (e) {
-    // If parse fails, return original to avoid breaking
     console.warn(`[WARN] Skipping (parse failed): ${file}`);
     return src;
   }
@@ -86,7 +85,6 @@ async function stripCssComments(file) {
 }
 
 function stripHtmlCommentsSync(src) {
-  // remove <!-- ... -->, not greedy across scripts/styles
   return src.replace(/<!--([\s\S]*?)-->/g, "").replace(/\n{3,}/g, "\n\n");
 }
 
@@ -104,7 +102,6 @@ async function processFile(file) {
     const out = stripHtmlCommentsSync(src);
     return fs.writeFile(file, out, "utf8");
   }
-  // Skip other files
 }
 
 async function main() {

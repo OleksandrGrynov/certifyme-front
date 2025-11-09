@@ -44,7 +44,7 @@ export default function AdminAchievementsPage() {
         setConfirmState((s) => ({ ...s, open: false }));
     };
 
-    /* 🔹 Завантаження досягнень */
+    
     const loadAchievements = useCallback(async () => {
         const token = localStorage.getItem("token");
         try {
@@ -64,7 +64,7 @@ export default function AdminAchievementsPage() {
         loadAchievements();
     }, [loadAchievements]);
 
-    /* 🟢 Зберегти або оновити */
+    
     const handleSave = async () => {
         const token = localStorage.getItem("token");
         const method = editing ? "PUT" : "POST";
@@ -84,7 +84,7 @@ export default function AdminAchievementsPage() {
 
             const data = await res.json();
             if (data.success) {
-                await loadAchievements(); // ✅ Повне оновлення списку
+                await loadAchievements(); 
                 setShowForm(false);
                 setEditing(null);
                 setForm(emptyForm);
@@ -115,7 +115,7 @@ export default function AdminAchievementsPage() {
         setShowForm(true);
     };
 
-    /* 🔴 Видалення */
+    
     const handleDelete = async (id) => {
         const ok = await confirmAsync({
             title: lang === "ua" ? "Видалення досягнення" : "Delete achievement",
@@ -146,10 +146,10 @@ export default function AdminAchievementsPage() {
         }
     };
 
-    /* 🎨 UI */
+    
     return (
       <div className="p-6 text-gray-100">
-          {/* Верхня панель */}
+          {}
           <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-green-400 flex items-center gap-2">
                   🏆 {lang === "ua" ? "Досягнення" : "Achievements"}
@@ -166,7 +166,7 @@ export default function AdminAchievementsPage() {
               </button>
           </div>
 
-          {/* Список */}
+          {}
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {achievements.map((a) => {
                   const title = lang === "ua" ? a.titleUa : a.titleEn;
@@ -222,7 +222,7 @@ export default function AdminAchievementsPage() {
                             )}
                         </div>
 
-                        {/* 🔻 Кнопки прикріплені донизу картки */}
+                        {}
                         <div className="flex gap-2 mt-auto pt-4 border-t border-gray-700">
                             <button
                               onClick={() => handleEdit(a)}
@@ -245,7 +245,7 @@ export default function AdminAchievementsPage() {
               })}
           </div>
 
-          {/* Форма */}
+          {}
           {showForm && (
             <div className="mt-10 bg-gray-900 p-6 rounded-xl border border-gray-700 shadow-lg max-w-3xl mx-auto">
                 <h3 className="text-2xl font-bold text-green-400 mb-5">

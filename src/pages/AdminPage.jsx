@@ -12,7 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { AnimatePresence } from "framer-motion";
 
-// 🧩 Підсторінки
+
 import AdminUsersPage from "./AdminUsersPage.jsx";
 import AdminTestsPage from "./AdminTestsPage";
 import AdminAchievementsPage from "./AdminAchievementsPage";
@@ -28,7 +28,7 @@ export default function AdminPage() {
 
     const [activeTab, setActiveTab] = useState("users");
 
-    // збереження вибраної вкладки
+    
     useEffect(() => {
         const saved = localStorage.getItem("adminTab");
         if (saved) setActiveTab(saved);
@@ -38,7 +38,7 @@ export default function AdminPage() {
         localStorage.setItem("adminTab", activeTab);
     }, [activeTab]);
 
-    // 🔹 Масив вкладок із перекладом прямо в коді
+    
     const tabs = [
         { id: "contacts", label: tLabel("Заявки", "Contacts"), icon: <MessageCircle size={18} /> },
         { id: "users", label: tLabel("Користувачі", "Users"), icon: <User size={18} /> },
@@ -60,7 +60,7 @@ export default function AdminPage() {
                   </h1>
               </div>
 
-              {/* 🔘 Вкладки */}
+              {}
               <div className="flex flex-wrap gap-3 border-b border-gray-700 pb-3">
                   {tabs.map((tab) => (
                     <button
@@ -78,7 +78,7 @@ export default function AdminPage() {
                   ))}
               </div>
 
-              {/* 🔹 Контент */}
+              {}
               <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 min-h-[400px]">
                   <AnimatePresence mode="wait">
                       <div key={activeTab}>

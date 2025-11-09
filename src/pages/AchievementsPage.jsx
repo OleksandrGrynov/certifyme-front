@@ -21,7 +21,7 @@ export default function AchievementsPage() {
   const { i18n } = useTranslation();
   const lang = i18n.language === "en" ? "en" : "ua";
 
-  // 🔹 Завантаження досягнень користувача
+  
   const loadAchievements = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -47,7 +47,7 @@ export default function AchievementsPage() {
     return () => window.removeEventListener("achievementUpdated", reload);
   }, []);
 
-  // ✅ Дозвіл на відтворення звуку
+  
   useEffect(() => {
     const unlock = () => {
       const audio = new Audio("/unlock.mp3");
@@ -69,10 +69,10 @@ export default function AchievementsPage() {
     return () => window.removeEventListener("pointerdown", unlock);
   }, []);
 
-  // ✅ Слухаємо глобальні події про нові досягнення
+  
 
 
-  // 🌀 Завантаження
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-400">
@@ -83,7 +83,7 @@ export default function AchievementsPage() {
     );
   }
 
-  // 🔒 Гість
+  
   if (isGuest) {
     return (
       <section className="flex flex-col items-center justify-center h-screen text-white bg-gradient-to-br from-black via-gray-900 to-gray-800">
@@ -118,12 +118,12 @@ export default function AchievementsPage() {
     );
   }
 
-  // 📊 Прогрес
+  
   const total = achievements.length;
   const unlocked = achievements.filter((a) => a.achieved).length;
   const overallProgress = total ? Math.round((unlocked / total) * 100) : 0;
 
-  // 📂 Групування
+  
   const grouped = {
     personal: achievements.filter((a) => a.category === "personal"),
     global: achievements.filter((a) => a.category === "global"),

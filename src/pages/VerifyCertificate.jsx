@@ -13,7 +13,7 @@ export default function VerifyCertificate() {
   useEffect(() => {
     const loadCert = async () => {
       try {
-        // 🔹 додаємо поточну мову до запиту
+        
         const res = await fetch(
           `${API_URL}/api/tests/certificates/${cert_id}?lang=${i18n.language}`,
           {

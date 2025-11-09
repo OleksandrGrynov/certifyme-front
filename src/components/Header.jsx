@@ -30,17 +30,13 @@ export default function Header({ onShowContact }) {
 
     const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
 
-    /* ======================================================
-       🌐 Ініціалізація мови
-       ====================================================== */
+    
     useEffect(() => {
         const savedLang = localStorage.getItem("i18nextLng") || "ua";
         i18n.changeLanguage(savedLang);
     }, [i18n]);
 
-    /* ======================================================
-       🔑 Авторизація + роль
-       ====================================================== */
+    
     useEffect(() => {
         const token = localStorage.getItem("token");
         const auth = localStorage.getItem("isAuthenticated") === "true";
@@ -60,9 +56,7 @@ export default function Header({ onShowContact }) {
         }
     }, []);
 
-    /* ======================================================
-       🧩 Обробники
-       ====================================================== */
+    
     const handleProfileClick = () => {
         if (isAuthenticated) window.location.href = "/profile";
         else setShowAuth(true);
@@ -73,14 +67,12 @@ export default function Header({ onShowContact }) {
         setIsOpen(false);
     };
 
-    /* ======================================================
-       ✨ Компонент
-       ====================================================== */
+    
     return (
       <>
           <header className="fixed top-0 left-0 w-full bg-gradient-to-r from-green-900 via-green-800 to-black text-gray-300 shadow-lg z-50 backdrop-blur-lg">
               <div className="max-w-7xl mx-auto flex justify-between items-center px-5 md:px-8 py-3">
-                  {/* 🔹 Логотип */}
+                  {}
                   <div
                     onClick={() => (window.location.href = "/")}
                     className="flex items-center space-x-2 cursor-pointer hover:opacity-90 transition"
@@ -93,7 +85,7 @@ export default function Header({ onShowContact }) {
                       <span className="text-lg font-semibold text-white">CertifyMe</span>
                   </div>
 
-                  {/* 🔹 Desktop навігація */}
+                  {}
                   <nav className="hidden md:flex space-x-6 text-gray-300">
                       <button
                         onClick={() => handleNavClick("/tests")}
@@ -135,7 +127,7 @@ export default function Header({ onShowContact }) {
                       )}
                   </nav>
 
-                  {/* 🔹 Права частина (desktop) */}
+                  {}
                   <div className="hidden md:flex items-center space-x-5">
                       <LanguageToggle />
 
@@ -156,7 +148,7 @@ export default function Header({ onShowContact }) {
                       </button>
                   </div>
 
-                  {/* 🔹 Кнопка бургер-меню */}
+                  {}
                   <button
                     className="md:hidden text-gray-300 hover:text-white transition"
                     onClick={() => setIsOpen(!isOpen)}
@@ -165,7 +157,7 @@ export default function Header({ onShowContact }) {
                   </button>
               </div>
 
-              {/* 🔹 Анімоване бургер-меню */}
+              {}
               <AnimatePresence>
                   {isOpen && (
                     <>
@@ -249,7 +241,7 @@ export default function Header({ onShowContact }) {
               </AnimatePresence>
           </header>
 
-          {/* 🔹 Модалки */}
+          {}
           {showAuth && (
             <AuthModal
               isOpen={showAuth}

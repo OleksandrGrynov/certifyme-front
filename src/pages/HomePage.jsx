@@ -10,9 +10,7 @@ import MagicBento from "../components/MagicBento";
 import ProfileCard from "../components/ProfileCard";
 import AuthModal from "../components/AuthModal";
 
-/* ─────────────────────────────────────────────────────────
- * Motion utils (variants, helpers)
- * ─────────────────────────────────────────────────────────*/
+
 const fadeUp = (delay = 0, distance = 24) => ({
   hidden: { opacity: 0, y: distance },
   show: { opacity: 1, y: 0, transition: { duration: 0.6, delay } },
@@ -28,9 +26,7 @@ const scaleIn = (delay = 0) => ({
 });
 
 
-/* ─────────────────────────────────────────────────────────
- * AnimatedNumber
- * ─────────────────────────────────────────────────────────*/
+
 function AnimatedNumber({ to = 0, duration = 1200, prefix = "", suffix = "" }) {
   const [val, setVal] = useState(0);
   const rafRef = useRef(0);
@@ -64,9 +60,7 @@ function AnimatedNumber({ to = 0, duration = 1200, prefix = "", suffix = "" }) {
   return <span>{formatted}</span>;
 }
 
-/* ─────────────────────────────────────────────────────────
- * AutoCarousel (Testimonials)
- * ─────────────────────────────────────────────────────────*/
+
 function AutoCarousel({ items = [], interval = 3800 }) {
   const [idx, setIdx] = useState(0);
   const prefersReducedMotion = useReducedMotion();
@@ -112,15 +106,13 @@ function AutoCarousel({ items = [], interval = 3800 }) {
         </motion.div>
       </AnimatePresence>
 
-      {/* soft glow */}
+      {}
       <div className="pointer-events-none absolute -top-24 -right-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
     </motion.div>
   );
 }
 
-/* ─────────────────────────────────────────────────────────
- * ScrollToTopButton
- * ─────────────────────────────────────────────────────────*/
+
 function ScrollToTopButton() {
   const [visible, setVisible] = useState(false);
 
@@ -144,9 +136,7 @@ function ScrollToTopButton() {
   );
 }
 
-/* ─────────────────────────────────────────────────────────
- * HomePage
- * ─────────────────────────────────────────────────────────*/
+
 export default function HomePage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -163,7 +153,7 @@ export default function HomePage() {
   const [popularTests, setPopularTests] = useState([]);
   const [loadingTests, setLoadingTests] = useState(true);
 
-  // soft parallax on hero content
+  
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], ["0px", "-60px"]);
@@ -292,9 +282,7 @@ export default function HomePage() {
 
   const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
 
-  /* ─────────────────────────────────────────────────────────
-   * Cursor parallax for hero ring
-   * ─────────────────────────────────────────────────────────*/
+  
   const ringRef = useRef(null);
   useEffect(() => {
     const el = ringRef.current;
@@ -312,7 +300,7 @@ export default function HomePage() {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center text-center overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
-      {/* Floating liquid background */}
+      {}
       <LiquidEther
         colors={["#5227FF", "#FF9FFC", "#B19EEF"]}
         mouseForce={20}
@@ -322,7 +310,7 @@ export default function HomePage() {
         autoIntensity={2.1}
       />
 
-      {/* HERO */}
+      {}
       <motion.div
         ref={heroRef}
         style={{ y: heroY, opacity: heroOpacity }}
@@ -392,7 +380,7 @@ export default function HomePage() {
           </motion.div>
         </motion.div>
 
-        {/* Bento card with subtle parallax glow */}
+        {}
         <motion.div
           variants={scaleIn(0.15)}
           initial="hidden"
@@ -431,7 +419,7 @@ export default function HomePage() {
         </motion.div>
       </motion.div>
 
-      {/* WHY US (4 features) */}
+      {}
       <motion.div
         variants={fadeUp(0.05, 24)}
         initial="hidden"
@@ -510,7 +498,7 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* PARTNERS MARQUEE (denser, less empty space) */}
+      {}
       <motion.div
         variants={scaleIn(0.05)}
         initial="hidden"
@@ -537,7 +525,7 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* TESTIMONIALS — AutoCarousel */}
+      {}
       <motion.div
         variants={fadeUp(0.05, 24)}
         initial="hidden"
@@ -553,7 +541,7 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* FAQ (Accordion with smoother spacing) */}
+      {}
       <motion.div
         variants={fadeUp(0.05, 24)}
         initial="hidden"
@@ -702,7 +690,7 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* POPULAR TESTS */}
+      {}
       <motion.div
         id="popular"
         variants={fadeUp(0.05, 24)}
@@ -811,7 +799,7 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* PROFILE CARD (CTA) */}
+      {}
       <motion.div
         variants={scaleIn(0.05)}
         initial="hidden"
@@ -833,7 +821,7 @@ export default function HomePage() {
         />
       </motion.div>
 
-      {/* BOTTOM CTA */}
+      {}
       <motion.div
         variants={fadeUp(0.05, 24)}
         initial="hidden"
@@ -878,10 +866,10 @@ export default function HomePage() {
         </div>
       </motion.div>
 
-      {/* Scroll-to-top */}
+      {}
       <ScrollToTopButton />
 
-      {/* Keyframe styles (kept tight to avoid duplication & empty space) */}
+      {}
       <style>{`
         @keyframes marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes marqueeReverse { 0% { transform: translateX(-50%) } 100% { transform: translateX(0) } }

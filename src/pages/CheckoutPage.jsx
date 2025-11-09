@@ -16,9 +16,7 @@ export default function CheckoutPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
-  /** ─────────────────────────────
-   * 📥 Завантаження даних тесту
-   * ───────────────────────────── */
+  
   useEffect(() => {
     const loadTest = async () => {
       try {
@@ -42,9 +40,7 @@ export default function CheckoutPage() {
 
 
 
-  /** ─────────────────────────────
-   * 💳 Обробка натискання кнопки оплати
-   * ───────────────────────────── */
+  
   const handlePayment = async () => {
     try {
       setPaying(true);
@@ -59,7 +55,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // 🟢 Безкоштовний тест
+      
       if (!test.price_cents && !test.price_uah) {
         const res = await fetch(`${API_URL}/api/user/tests/grant`, {
           method: "POST",
@@ -84,7 +80,7 @@ export default function CheckoutPage() {
         }
       }
 
-      // 💳 Створюємо Stripe checkout session
+      
       const res = await fetch(`${API_URL}/api/payments/checkout`, {
         method: "POST",
         headers: {
@@ -97,7 +93,7 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (data?.url) {
         localStorage.setItem("lastPaidTestId", id);
-        window.location.href = data.url; // 🔁 редірект на Stripe
+        window.location.href = data.url; 
       } else {
         tToast.error(
           data?.message || "Помилка створення сесії оплати",
@@ -112,9 +108,7 @@ export default function CheckoutPage() {
     }
   };
 
-  /** ─────────────────────────────
-   * 🧾 Формат ціни
-   * ───────────────────────────── */
+  
   const getPrice = () => {
     if (test?.price_uah)
       return new Intl.NumberFormat("uk-UA", {
@@ -127,9 +121,7 @@ export default function CheckoutPage() {
     }).format((test?.price_cents || 0) / 100);
   };
 
-  /** ─────────────────────────────
-   * 🖼️ Рендер сторінки
-   * ───────────────────────────── */
+  
   if (loading)
     return (
       <div className="flex items-center justify-center h-screen bg-black text-gray-300">

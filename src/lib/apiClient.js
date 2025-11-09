@@ -1,4 +1,4 @@
-// src/lib/apiClient.js
+
 export const API_URL = import.meta.env.VITE_API_URL;
 
 export async function fetchWithAuth(endpoint, options = {}) {

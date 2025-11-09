@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Save, Trash, Plus, Settings2, X, CheckCircle } from "lucide-react";
+import { Save, Trash, Plus, Settings2, X, CheckCircle,Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { API_URL } from "../lib/apiClient.js";
@@ -83,6 +83,7 @@ export default function AdminEditTestPage() {
     });
     setEditingTest(updated);
   };
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleChangeQuestion = (qi, field, value) => {
     const updated = { ...editingTest };
@@ -116,40 +117,72 @@ export default function AdminEditTestPage() {
 
   const handleSave = async () => {
     const token = localStorage.getItem("token");
+    setIsSaving(true); 
+
     try {
-      const res = await fetch(`${API_URL}/api/tests/${editingTest.id}`, {
+      
+      const res1 = await fetch(`${API_URL}/api/tests/${editingTest.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...editingTest,
+          title_ua: editingTest.title_ua,
+          title_en: editingTest.title_en,
+          description_ua: editingTest.description_ua,
+          description_en: editingTest.description_en,
+          image_url: editingTest.image_url,
           price_amount: editingTest.price_amount,
           currency: editingTest.currency,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setToast(true);
-        setTimeout(() => {
-          setToast(false);
-          navigate("/admin");
-        }, 2000);
-      }
+
+      const data1 = await res1.json();
+      if (!data1.success) throw new Error("Test update failed");
+
+      
+      const res2 = await fetch(`${API_URL}/api/tests/${editingTest.id}/questions`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ questions: editingTest.questions }),
+      });
+
+      const data2 = await res2.json();
+      if (!data2.success) throw new Error("Questions update failed");
+
+      
+      setIsSaving(false);
+      navigate("/admin", { state: { toast: "updated" } });
     } catch (err) {
+      setIsSaving(false);
       console.error("❌ Error saving test:", err);
+      alert("❌ Помилка при збереженні тесту");
     }
   };
+
+
 
   if (!editingTest) return <div className="text-center text-gray-400 p-10">Loading...</div>;
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
+      {isSaving && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-xl shadow-2xl flex flex-col items-center gap-3 border border-gray-700">
+            <Loader2 className="animate-spin text-green-400" size={40} />
+            <p className="text-gray-300 text-lg"> Тест оновлюється...</p>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fadeIn">
           <CheckCircle className="inline mr-2" size={18} />
-          {t("admin.testUpdated") || "✅ Зміни успішно збережено!"}
+          {t("admin.testUpdated") || " Зміни успішно збережено!"}
         </div>
       )}
 

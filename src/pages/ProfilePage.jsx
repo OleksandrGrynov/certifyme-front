@@ -74,7 +74,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("token");
-    // 🧹 Очистити всі promoWidget_* ключі
+    
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("promoWidget_")) {
         localStorage.removeItem(key);
@@ -281,7 +281,7 @@ export default function ProfilePage() {
             onSubmit={handlePasswordChange}
             className="mt-6 text-left space-y-3 border-t border-gray-700 pt-4"
           >
-            {/* Старий пароль */}
+            {}
             <div className="relative">
               <input
                 type={showPasswords.old ? "text" : "password"}
@@ -302,7 +302,7 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* Новий пароль */}
+            {}
             <div className="relative">
               <input
                 type={showPasswords.new ? "text" : "password"}
@@ -328,7 +328,7 @@ export default function ProfilePage() {
               <PasswordStrengthBar password={passwords.new} />
             </div>
 
-            {/* Підтвердження пароля */}
+            {}
             <div className="relative">
               <input
                 type={showPasswords.confirm ? "text" : "password"}

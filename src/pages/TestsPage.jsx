@@ -1,4 +1,4 @@
-// src/pages/TestsPage.jsx
+
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
@@ -23,12 +23,12 @@ export default function TestsPage() {
     try {
       setLoading(true);
 
-      // 🧾 1. Отримуємо список усіх тестів
+      
       const testsRes = await fetch(`${API_URL}/api/tests?lang=${i18n.language}`);
       const testsJson = await testsRes.json();
       setTests(testsJson?.tests || []);
 
-      // 🔐 2. Якщо користувач увійшов — завантажуємо тести, які йому належать
+      
       if (token) {
         const ownedRes = await fetch(`${API_URL}/api/user/tests`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -52,7 +52,7 @@ export default function TestsPage() {
   }, [i18n.language, token]);
 
 
-  // 🧾 Завантаження пройдених тестів користувача
+  
   const loadPassedTests = useCallback(async () => {
     try {
       if (!token) return;
@@ -66,9 +66,7 @@ export default function TestsPage() {
     }
   }, [token]);
 
-  /** ─────────────────────────────
-   * 💰 Обробка після повернення зі Stripe (?paid=true)
-   * ───────────────────────────── */
+  
   useEffect(() => {
     const grantAccessAfterPayment = async () => {
       const params = new URLSearchParams(location.search);
@@ -76,24 +74,24 @@ export default function TestsPage() {
       const testId = params.get("testId");
       if (!isPaid || !testId) return;
 
-      // ✅ Запобігання повторному виконанню
+      
       const key = `paid_${testId}`;
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "done");
 
-      // 🟢 У продакшені нічого не робимо — чекати webhook
+      
       if (!import.meta.env.DEV) {
         tToast.success(
           "✅ Оплата обробляється. Доступ з'явиться за мить.",
           "✅ Payment is processing. Access will appear shortly."
         );
         await loadTests();
-        // Очистити URL
+        
         window.history.replaceState({}, "", "/tests");
         return;
       }
 
-      // 🧪 DEV: підтверджуємо локально
+      
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
@@ -146,13 +144,13 @@ export default function TestsPage() {
     grantAccessAfterPayment();
   }, [location.search, loadTests, navigate, i18n.language]);
 
-  // 📥 Початкове завантаження
+  
   useEffect(() => {
     loadTests();
     loadPassedTests();
   }, [loadTests, loadPassedTests]);
 
-  // 🔍 Фільтр тестів
+  
   const filtered = useMemo(() => {
     if (activeTab === "owned") return tests.filter((t) => ownedIds.has(t.id));
     if (activeTab === "notOwned") return tests.filter((t) => !ownedIds.has(t.id));
@@ -160,7 +158,7 @@ export default function TestsPage() {
     return tests;
   }, [tests, ownedIds, activeTab, passedTests]);
 
-  // 💲 Форматування валюти
+  
   const formatCurrency = (cents, currency = "usd") => {
     const amount = (cents || 0) / 100;
     const locale = i18n.language === "ua" ? "uk-UA" : "en-US";
@@ -172,7 +170,7 @@ export default function TestsPage() {
     }).format(amount);
   };
 
-  // 🛒 Покупка тесту
+  
   const handleBuy = async (testId) => {
     if (!token) {
       tToast.error("Спочатку увійдіть у профіль", "Please sign in first");
@@ -208,12 +206,12 @@ export default function TestsPage() {
     }
   };
 
-  // 🖼️ Рендер
+  
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
       <h1 className="text-3xl font-bold text-center mb-8">Тести / Tests</h1>
 
-      {/* 🔘 Перемикач вкладок */}
+      {}
       <div className="max-w-7xl mx-auto mb-6 flex flex-wrap gap-2">
         {[
           { key: "all", ua: "Усі", en: "All" },
@@ -237,7 +235,7 @@ export default function TestsPage() {
         ))}
       </div>
 
-      {/* 📦 Список тестів */}
+      {}
       {loading ? (
         <div className="max-w-7xl mx-auto grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (

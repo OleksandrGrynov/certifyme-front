@@ -20,7 +20,7 @@ export default function AdminCertificatesPage() {
     const { i18n } = useTranslation();
     const lang = i18n.language === "en" ? "en" : "ua";
 
-    // confirm modal
+    
     const [confirmState, setConfirmState] = useState({
         open: false,
         title: lang === "ua" ? "Підтвердження" : "Confirm",
@@ -47,12 +47,12 @@ export default function AdminCertificatesPage() {
         setConfirmState((s) => ({ ...s, open: false }));
     };
 
-    // helpers
+    
     const getUserName = (c) =>
       c?.user?.name || c?.user_name || (c?.user_id ? `#${c.user_id}` : "-");
     const getUserEmail = (c) => c?.user?.email || c?.user_email || "-";
 
-    // load
+    
     const loadCertificates = useCallback(async () => {
         setLoading(true);
         const token = localStorage.getItem("token");
@@ -88,7 +88,7 @@ export default function AdminCertificatesPage() {
         loadCertificates();
     }, [loadCertificates]);
 
-    // search
+    
     useEffect(() => {
         const s = search.toLowerCase();
         setFiltered(
@@ -102,7 +102,7 @@ export default function AdminCertificatesPage() {
         );
     }, [search, certificates]);
 
-    // delete
+    
     const handleDelete = async (id) => {
         const ok = await confirmAsync({
             title: lang === "ua" ? "Видалення сертифіката" : "Delete certificate",
@@ -144,12 +144,12 @@ export default function AdminCertificatesPage() {
         }
     };
 
-    // view PDF
+    
     const handleView = (certId) => {
         window.open(`/verify/${certId}`, "_blank");
     };
 
-    // update expiration
+    
     const handleUpdateDate = async (id, newDate) => {
         if (!newDate) return;
         const token = localStorage.getItem("token");

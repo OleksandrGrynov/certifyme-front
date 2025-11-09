@@ -16,13 +16,13 @@ export default function AnalyticsPage() {
   const [err, setErr] = useState("");
   const [isPublicView, setIsPublicView] = useState(false);
 
-  // 🔹 Завантаження аналітики, якщо користувач авторизований
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) fetchAll();
   }, [i18n.language]);
 
-  // 🔸 Отримання аналітики користувача
+  
   const fetchAll = async () => {
     setLoading(true);
     setErr("");
@@ -75,7 +75,7 @@ export default function AnalyticsPage() {
     }
   };
 
-  // 🔸 Компонент картки статистики
+  
   const StatCard = ({ title, value, hint }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
     </motion.div>
   );
 
-  // 🔸 Форматування дати
+  
   const formatDate = (iso) => {
     try {
       const d = new Date(iso);
@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
     }
   };
 
-  // 🔸 Оновлений LineChart
+  
   const LineChart = ({ points = [], svgHeight = 180, color = "#34d399" }) => {
     const [hoverIndex, setHoverIndex] = useState(null);
 
@@ -110,7 +110,7 @@ export default function AnalyticsPage() {
         </div>
       );
 
-    // 🔹 Сортуємо дані по даті
+    
     const data = [...points].sort(
       (a, b) => new Date(a.day || a.date) - new Date(b.day || b.date)
     );
@@ -118,7 +118,7 @@ export default function AnalyticsPage() {
     const max = Math.max(...data.map((p) => p.count || 0), 1);
     const min = Math.min(...data.map((p) => p.count || 0), 0);
 
-    // Мінімум 7 точок для масштабу
+    
     const totalPoints = Math.max(data.length, 7);
     const w = totalPoints * 60;
     const stepX = w / (totalPoints - 1);
@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
         preserveAspectRatio="none"
         className="rounded"
       >
-        {/* 🌈 Градієнт під лінією */}
+        {}
         <defs>
           <linearGradient id={`grad-${color}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.4" />
@@ -239,7 +239,7 @@ export default function AnalyticsPage() {
     );
   };
 
-  // 🔸 Інтерактивний стовпчиковий графік
+  
   const BarChart = ({ items = [] }) => {
     if (!items || items.length === 0)
       return (
@@ -295,7 +295,7 @@ export default function AnalyticsPage() {
     );
   };
 
-  // 🔸 Підготовка статистики
+  
   const stats = useMemo(
     () => ({
       enrolledCourses: overview?.courses_enrolled ?? "—",
@@ -317,7 +317,7 @@ export default function AnalyticsPage() {
 
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-gray-100 overflow-hidden">
-      {/* background glow */}
+      {}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/3 -left-1/3 w-[600px] h-[600px] bg-green-500/20 blur-[200px] rounded-full animate-pulse"></div>
         <div className="absolute bottom-0 right-0 w-[700px] h-[700px] bg-emerald-400/20 blur-[200px] rounded-full animate-[pulse_6s_ease-in-out_infinite]"></div>

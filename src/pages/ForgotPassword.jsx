@@ -12,14 +12,14 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [stage, setStage] = useState("email"); // "email" або "reset"
+  const [stage, setStage] = useState("email"); 
   const [newPassword, setNewPassword] = useState("");
   const [passwordCheck, setPasswordCheck] = useState({
     isValid: false,
     rules: { length: false, upper: false, number: false, special: false },
   });
 
-  // 🔹 Надсилання листа з посиланням
+  
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -41,7 +41,7 @@ export default function ForgotPassword() {
       );
 
       if (res.ok) {
-        // У реальному випадку користувач перейде по посиланню
+        
         setTimeout(() => setStage("reset"), 1000);
       }
     } catch {
@@ -55,7 +55,7 @@ export default function ForgotPassword() {
     }
   };
 
-  // 🔹 Встановлення нового пароля
+  
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
 

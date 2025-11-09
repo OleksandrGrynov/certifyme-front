@@ -9,7 +9,7 @@ import ContactModal from "../components/ContactModal.jsx";
 import AuthModal from "../components/AuthModal.jsx";
 
 export default function Layout() {
-  // 🔹 Піднімаємо стани сюди
+  
   const [showModal, setShowModal] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
@@ -20,7 +20,7 @@ export default function Layout() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 🔔 Глобальні тости */}
+      {}
       <Toaster
         position="top-center"
         toastOptions={{
@@ -43,7 +43,7 @@ export default function Layout() {
 
       <AchievementListener />
 
-      {/* 🔹 Передаємо сеттери в Header */}
+      {}
       <Header
         onShowContact={() => setShowModal(true)}
         onShowAuth={() => setShowAuth(true)}
@@ -56,7 +56,7 @@ export default function Layout() {
 
       <Footer />
 
-      {/* 🔹 Глобальні модалки */}
+      {}
       <ContactModal isOpen={showModal} onClose={() => setShowModal(false)} />
       <AuthModal
         isOpen={showAuth}

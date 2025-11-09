@@ -4,7 +4,6 @@ import tToast from "../lib/tToast";
 export default function AchievementListener() {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
 
-  // 🎵 Разове розблокування аудіо
   useEffect(() => {
     const unlock = () => {
       const audio = new Audio("/unlock.mp3");
@@ -19,7 +18,6 @@ export default function AchievementListener() {
     return () => window.removeEventListener("pointerdown", unlock);
   }, []);
 
-  // 🏆 Глобальний обробник події
   useEffect(() => {
     const handleAchievements = (e) => {
       const newAchievements = e.detail || [];
@@ -31,7 +29,6 @@ export default function AchievementListener() {
           audio.volume = 0.7;
           if (audioUnlocked) audio.play().catch(() => {});
 
-          // ✅ використовуємо tToast (його Toaster уже є в Layout.jsx)
           tToast.success(
             `🏆 ${a.title_ua || "Досягнення"}`,
             `🏆 ${a.title_en || "Achievement"}`
@@ -46,5 +43,5 @@ export default function AchievementListener() {
     return () => window.removeEventListener("achievementUnlocked", handleAchievements);
   }, [audioUnlocked]);
 
-  return null; // ❌ без Toaster тут
+  return null;
 }

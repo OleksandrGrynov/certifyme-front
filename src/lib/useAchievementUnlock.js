@@ -1,12 +1,9 @@
-// src/lib/useAchievementUnlock.js
+
 import toast from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
 import { API_URL } from "./apiClient";
 
-/**
- * Глобальне розблокування аудіо після першої взаємодії користувача.
- * Викликається автоматично з хука нижче; гарантує, що play() не буде заблоковано.
- */
+
 let audioUnlocked = false;
 let audioUnlockBound = false;
 
@@ -23,9 +20,9 @@ function ensureAudioUnlockedOnce() {
         a.pause();
         a.currentTime = 0;
         audioUnlocked = true;
-        // console.log("✅ Audio context unlocked (global)");
+        
       }).catch(() => {
-        // Може не розблокуватись з першого разу — це ок.
+        
       });
     }
     window.removeEventListener("pointerdown", unlock);
@@ -34,25 +31,18 @@ function ensureAudioUnlockedOnce() {
   window.addEventListener("pointerdown", unlock, { once: true });
 }
 
-/**
- * Відтворити звук розблокування (якщо аудіо вже “розігріте”).
- */
+
 function playUnlockSound() {
-  if (!audioUnlocked) return; // уникнути помилки autoplay
+  if (!audioUnlocked) return; 
   const audio = new Audio("/public/unlock.mp3");
   audio.volume = 0.8;
   audio.currentTime = 0;
   audio.play().catch(() => {});
 }
 
-/**
- * Хук для централізованого розблокування досягнень з тостом і звуком.
- * Використання:
- *   const { unlock } = useAchievementUnlock(lang);
- *   await unlock("first_certificate");
- */
+
 export function useAchievementUnlock(lang = "ua") {
-  // 1) гарантуємо розігрів аудіо на сторінці, де використовується хук
+  
   if (typeof window !== "undefined") {
     ensureAudioUnlockedOnce();
   }
@@ -64,7 +54,7 @@ export function useAchievementUnlock(lang = "ua") {
       const token = localStorage.getItem("token");
       if (!token) return false;
 
-      // Дедуплікація показу тосту + звуку (опціонально з урахуванням юзера)
+      
       let userKey = "guest";
       try {
         const u = jwtDecode(token);
@@ -75,7 +65,7 @@ export function useAchievementUnlock(lang = "ua") {
         ? `shown-achievement-${userKey}-${code}`
         : `shown-achievement-${code}`;
 
-      // Викликаємо бекенд — він поставить 100% і поверне об’єкт ачивки
+      
       const res = await fetch(`${api}/api/achievements/unlock`, {
         method: "POST",
         headers: {
@@ -88,7 +78,7 @@ export function useAchievementUnlock(lang = "ua") {
       const data = await res.json();
       if (!data?.success || !data?.achievement) return false;
 
-      // Якщо цей тост уже показували — не спамимо
+      
       if (!localStorage.getItem(shownKey)) {
         localStorage.setItem(shownKey, "true");
 
@@ -106,7 +96,7 @@ export function useAchievementUnlock(lang = "ua") {
         );
 
         playUnlockSound();
-        // повідомимо інші сторінки/віджети оновити стейт досягнень
+        
         window.dispatchEvent(new Event("achievementUpdated"));
       }
 
@@ -116,10 +106,7 @@ export function useAchievementUnlock(lang = "ua") {
     }
   };
 
-  /**
-   * Допоміжний апдейтер прогресу пачкою: [{ code, progress }, ...]
-   * Можна використовувати для щоденних/серійних ачивок без 100%.
-   */
+  
   const updateBatch = async (updates = []) => {
     try {
       const token = localStorage.getItem("token");

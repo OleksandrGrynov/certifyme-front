@@ -23,7 +23,7 @@ export default function TestPage() {
   const [secondsLeft, setSecondsLeft] = useState(null);
   const timerRef = useRef(null);
 
-  // ✅ 1. Розблокування аудіо після першої взаємодії користувача
+  
   useEffect(() => {
     const unlock = () => {
       const audio = new Audio("/unlock.mp3");
@@ -45,7 +45,7 @@ export default function TestPage() {
     return () => window.removeEventListener("pointerdown", unlock);
   }, []);
 
-  // Завантаження збережених пояснень
+  
   useEffect(() => {
     const saved = localStorage.getItem(`explanations_${id}`);
     if (saved) setExplanations(JSON.parse(saved));
@@ -56,7 +56,7 @@ export default function TestPage() {
       localStorage.setItem(`explanations_${id}`, JSON.stringify(explanations));
   }, [explanations, id]);
 
-  // Завантаження тесту з авторизацією
+  
   useEffect(() => {
     const loadTest = async () => {
       try {
@@ -79,7 +79,7 @@ export default function TestPage() {
               "💳 Спочатку оплатіть тест",
               "💳 Please purchase the test first"
             );
-            // 🔁 Через 2 секунди повертаємо на сторінку списку тестів
+            
             setTimeout(() => (window.location.href = "/tests"), 1000);
           } else {
             tToast.error("❌ Помилка доступу", "❌ Access error");
@@ -114,7 +114,7 @@ export default function TestPage() {
     });
   };
 
-  // ✅ 2. Аудіо викликається тільки якщо дозволено
+  
   const playUnlockSound = () => {
     if (!audioUnlocked) {
       console.warn("⚠️ Audio context not yet unlocked");
@@ -150,18 +150,18 @@ export default function TestPage() {
       if (data.success && data.achievement) {
         const key = `shown-achievement-${userId}-${data.achievement.id}`;
 
-        // показуємо тільки 1 раз на користувача
+        
         if (!localStorage.getItem(key)) {
           localStorage.setItem(key, "true");
 
-          // 🔥 Глобальний виклик події — покаже тост через AchievementListener
+          
           window.dispatchEvent(
             new CustomEvent("achievementUnlocked", {
               detail: [data.achievement],
             })
           );
 
-          // 🔁 оновити список досягнень, якщо сторінка відкрита
+          
           window.dispatchEvent(new Event("achievementUpdated"));
         } else {
           console.log(
@@ -175,7 +175,7 @@ export default function TestPage() {
   };
 
 
-  // ✅ 3. handleSubmit тепер також зберігає результат у БД
+  
   const handleSubmit = async () => {
     let correct = 0;
 
@@ -195,7 +195,7 @@ export default function TestPage() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      // ✅ Збереження результату тесту на бекенді
+      
       const res = await fetch(`${API_URL}/api/tests/record`, {
         method: "POST",
         headers: {
@@ -211,7 +211,7 @@ export default function TestPage() {
 
       const data = await res.json();
 
-      // ✅ якщо бекенд повернув нові досягнення → показати їх через глобальний слухач
+      
       if (data.success && data.newAchievements?.length) {
         window.dispatchEvent(
           new CustomEvent("achievementUnlocked", {
@@ -219,11 +219,11 @@ export default function TestPage() {
           })
         );
 
-        // 🔄 оновити список на сторінці досягнень (якщо відкрита)
+        
         window.dispatchEvent(new Event("achievementUpdated"));
       }
 
-      // 🏆 ручне розблокування окремих (залишаємо для backward compatibility)
+      
       await unlockAchievement("first_certificate");
       if (correct === test.questions.length)
         await unlockAchievement("no_mistakes");
@@ -294,9 +294,9 @@ export default function TestPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          testId: test.id, // ✅ надсилаємо ідентифікатор тесту
-          score,           // ✅ кількість правильних
-          total: test.questions.length, // ✅ загальна кількість
+          testId: test.id, 
+          score,           
+          total: test.questions.length, 
         }),
       });
 
@@ -322,7 +322,7 @@ export default function TestPage() {
     }
   };
 
-  // Таймер
+  
   useEffect(() => {
     if (!test) {
       setSecondsLeft(null);

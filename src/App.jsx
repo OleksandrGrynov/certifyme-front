@@ -27,7 +27,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 🌀 loader зникає, коли сторінка повністю прогрузилась
+    
     const onReady = () => setLoading(false);
     if (document.readyState === "complete") onReady();
     else window.addEventListener("load", onReady);
@@ -63,7 +63,7 @@ function App() {
           <Route path="/checkout/:id" element={<CheckoutPage />} />
           <Route path="/tests/:id/result" element={<TestResultDetails />} />
 
-          {/* 🧱 Адмін маршрути — тільки через ProtectedRoute */}
+          {}
           <Route
             path="admin"
             element={

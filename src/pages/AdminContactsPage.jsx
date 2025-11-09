@@ -15,7 +15,7 @@ export default function AdminContactsPage() {
   const prevIdsRef = useRef([]);
   const audioRef = useRef(null);
 
-  // confirm modal state
+  
   const [confirmState, setConfirmState] = useState({
     open: false,
     title: tLabel("Підтвердження", "Confirmation"),

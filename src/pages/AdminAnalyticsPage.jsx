@@ -36,7 +36,7 @@ export default function AdminAnalyticsPage() {
   const [topUsers, setTopUsers] = useState([]);
   const [days, setDays] = useState(30);
 
-  // 📊 Завантаження аналітики
+  
   const loadData = async () => {
     const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
@@ -71,7 +71,7 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* 🔘 Вибір періоду */}
+      {}
       <div className="flex justify-end gap-2 mb-4">
         {[7, 30, 90].map((d) => (
           <button
@@ -88,7 +88,7 @@ export default function AdminAnalyticsPage() {
         ))}
       </div>
 
-      {/* 📈 Загальна статистика */}
+      {}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard icon={<Users />} title={tLabel("Користувачів", "Users")} value={overview.total_users} />
         <StatCard icon={<BookOpen />} title={tLabel("Тестів", "Tests")} value={overview.tests} />
@@ -98,7 +98,7 @@ export default function AdminAnalyticsPage() {
         <StatCard icon={<Calendar />} title={tLabel("Оновлено", "Updated")} value={formatDate(overview.last_updated)} />
       </div>
 
-      {/* 📊 Нові користувачі */}
+      {}
       <ChartBox title={tLabel(`Нові користувачі (${days} днів)`, `New users (${days} days)`)} >
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={usersDaily}>
@@ -111,7 +111,7 @@ export default function AdminAnalyticsPage() {
         </ResponsiveContainer>
       </ChartBox>
 
-      {/* 💰 Оплати */}
+      {}
       <ChartBox title={tLabel(`Оплати (${days} днів)`, `Payments (${days} days)`)} >
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={paymentsDaily}>
@@ -124,7 +124,7 @@ export default function AdminAnalyticsPage() {
         </ResponsiveContainer>
       </ChartBox>
 
-      {/* 🏆 Топ тестів */}
+      {}
       <div className="bg-gray-900/70 p-6 rounded-2xl border border-gray-800 shadow-lg">
         <h3 className="text-lg md:text-xl text-green-400 font-semibold mb-5 flex items-center gap-2">
           <BarChart3 size={22} />
@@ -190,7 +190,7 @@ export default function AdminAnalyticsPage() {
         )}
       </div>
 
-      {/* 👥 Топ користувачів */}
+      {}
       <div className="bg-gray-900/70 p-6 rounded-2xl border border-gray-800 shadow-lg">
         <h3 className="text-lg md:text-xl text-green-400 font-semibold mb-5 flex items-center gap-2">
           <TrendingUp size={22} />
@@ -250,7 +250,7 @@ export default function AdminAnalyticsPage() {
   );
 }
 
-// ────────────────────────────────
+
 function ChartBox({ title, children }) {
   return (
     <motion.div

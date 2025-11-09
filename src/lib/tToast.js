@@ -1,4 +1,4 @@
-// filepath: d:\coursehub-front\src\lib\tToast.js
+
 import toast from "react-hot-toast";
 import i18n from "../i18n/i18n";
 

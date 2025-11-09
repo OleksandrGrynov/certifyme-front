@@ -24,7 +24,7 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🧩 Перевірка співпадіння паролів
+    
     if (password !== confirm) {
       setMessage(
         i18n.language === "ua"
@@ -34,7 +34,7 @@ export default function ResetPassword() {
       return;
     }
 
-    // 🧩 Перевірка складності пароля
+    
     const check = validatePassword(password);
     if (!check.isValid) {
       setMessage(

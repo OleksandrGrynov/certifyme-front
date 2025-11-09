@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Save, Trash, Settings2, X, CheckCircle } from "lucide-react";
+import { Plus, Save, Trash, Settings2, X, CheckCircle,Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { API_URL } from "../lib/apiClient";
 export default function AdminCreateTestPage() {
@@ -9,6 +9,8 @@ export default function AdminCreateTestPage() {
 
   const [usdToUah, setUsdToUah] = useState(42);
   const [toast, setToast] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); 
+
   const [editLang, setEditLang] = useState(i18n.language === "en" ? "en" : "ua");
 
   const [newTest, setNewTest] = useState({
@@ -22,7 +24,7 @@ export default function AdminCreateTestPage() {
     questions: [],
   });
 
-  // 📈 Завантажити курс USD→UAH один раз при завантаженні
+  
   useEffect(() => {
     const loadRate = async () => {
       try {
@@ -39,7 +41,7 @@ export default function AdminCreateTestPage() {
     loadRate();
   }, []);
 
-  // 🧩 Додати питання
+  
   const addQuestion = () => {
     setNewTest({
       ...newTest,
@@ -50,7 +52,7 @@ export default function AdminCreateTestPage() {
     });
   };
 
-  // 🧠 Додати відповідь
+  
   const addAnswer = (qi) => {
     const updated = { ...newTest };
     updated.questions[qi].answers.push({
@@ -94,7 +96,7 @@ export default function AdminCreateTestPage() {
     setNewTest(updated);
   };
 
-  // 💵 Зміна валюти (миттєво, як у EditTest)
+  
   const handleCurrencyChange = (e) => {
     const newCurrency = e.target.value;
     let newPrice = newTest.price_amount;
@@ -114,9 +116,10 @@ export default function AdminCreateTestPage() {
     });
   };
 
-  // 💾 Зберегти тест
   const handleSave = async () => {
     const token = localStorage.getItem("token");
+    setIsSaving(true); 
+
     try {
       const res = await fetch(`${API_URL}/api/tests`, {
         method: "POST",
@@ -129,21 +132,42 @@ export default function AdminCreateTestPage() {
           price_cents: Math.round(newTest.price_amount * 100),
         }),
       });
+
       const data = await res.json();
+
+      
+      await new Promise((r) => setTimeout(r, 3000));
+
+      setIsSaving(false);
+
       if (data.success) {
-        setToast(true);
-        setTimeout(() => {
-          setToast(false);
-          navigate("/admin");
-        }, 2000);
+        navigate("/admin", { state: { toast: "created" } }); 
+      } else {
+        alert(" Помилка створення тесту!");
       }
     } catch (err) {
-      console.error("❌ Error creating test:", err);
+      setIsSaving(false);
+      console.error(" Error creating test:", err);
+      alert(" Помилка при створенні тесту");
     }
   };
 
+
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white p-6">
+      {isSaving && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-xl shadow-2xl flex flex-col items-center gap-3 border border-gray-700">
+            <Loader2 className="animate-spin text-green-400" size={40} />
+            <p className="text-gray-300 text-lg">
+              {i18n.language === "en"
+                ? "Creating test..."
+                : "Тест створюється..."}
+            </p>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fadeIn">
           <CheckCircle className="inline mr-2" size={18} />
@@ -154,7 +178,7 @@ export default function AdminCreateTestPage() {
       )}
 
       <div className="max-w-5xl mx-auto bg-gray-900/70 border border-gray-800 rounded-2xl shadow-2xl p-6 space-y-6">
-        {/* 🔝 Заголовок */}
+        {}
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-green-400 flex items-center gap-2">
             <Settings2 />{" "}
@@ -168,7 +192,7 @@ export default function AdminCreateTestPage() {
           </button>
         </div>
 
-        {/* 🌐 Перемикач мови */}
+        {}
         <div className="flex justify-center mb-4">
           <div className="flex bg-gray-800 rounded-full border border-gray-700 overflow-hidden">
             <button
@@ -194,7 +218,7 @@ export default function AdminCreateTestPage() {
           </div>
         </div>
 
-        {/* Назва / опис */}
+        {}
         <input
           value={editLang === "ua" ? newTest.title_ua : newTest.title_en}
           onChange={(e) =>
@@ -239,7 +263,7 @@ export default function AdminCreateTestPage() {
           }
         />
 
-        {/* 💵 Ціна з локальною конвертацією */}
+        {}
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -265,7 +289,7 @@ export default function AdminCreateTestPage() {
           </select>
         </div>
 
-        {/* 🧠 Питання */}
+        {}
         {newTest.questions.map((q, qi) => (
           <div
             key={qi}
@@ -359,7 +383,7 @@ export default function AdminCreateTestPage() {
             : "Додати питання"}
         </button>
 
-        {/* Зберегти */}
+        {}
         <div className="flex justify-end border-t border-gray-700 pt-4">
           <button
             onClick={handleSave}

@@ -26,7 +26,7 @@ export default function AdminSettingsPage() {
     errors: true,
   });
 
-  // 🧠 Завантаження системної інформації
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -35,7 +35,7 @@ export default function AdminSettingsPage() {
     })
       .then((r) => r.json())
       .then((data) => {
-        // 🔄 Переклад значень, якщо користувач обрав EN
+        
         if (lang === "en" && data.info) {
           const translated = {
             ...data.info,
@@ -55,7 +55,7 @@ export default function AdminSettingsPage() {
       .catch((err) => console.error("❌ System info error:", err));
   }, [lang]);
 
-  // 📊 Завантаження аналітики
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -66,7 +66,7 @@ export default function AdminSettingsPage() {
       .then((data) => {
         if (!Array.isArray(data.insights)) return setInsights([]);
         if (lang === "en") {
-          // перекладаємо фрази вручну на фронті
+          
           const translated = data.insights.map((t) =>
             t
               .replace("Наразі", "Currently")
@@ -89,7 +89,7 @@ export default function AdminSettingsPage() {
       .catch(() => setInsights([]));
   }, [lang]);
 
-  // 📱 Кількість підписників на SMS
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -101,7 +101,7 @@ export default function AdminSettingsPage() {
       .catch(() => setSmsCount(0));
   }, []);
 
-  // ⚙️ Імітація виконання адмін-дій
+  
   const runAdminAction = async (labelUa, labelEn) => {
     toast.loading(tLabel(`⏳ Виконую: ${labelUa}`, `⏳ Running: ${labelEn}`));
     await new Promise((r) => setTimeout(r, 1200));
@@ -113,7 +113,7 @@ export default function AdminSettingsPage() {
     <div className="space-y-8">
       <Toaster position="top-center" />
 
-      {/* ⚙️ Стан системи */}
+      {}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
           <Server size={20} /> {tLabel("Стан системи", "System Status")}
@@ -140,7 +140,7 @@ export default function AdminSettingsPage() {
         )}
       </section>
 
-      {/* 🧰 Адмін-інструменти */}
+      {}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-4">
           <Wrench size={20} /> {tLabel("Адмін-інструменти", "Admin Tools")}
@@ -177,7 +177,7 @@ export default function AdminSettingsPage() {
         </div>
       </section>
 
-      {/* 🔔 Сповіщення */}
+      {}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
           <Bell size={20} /> {tLabel("Сповіщення", "Notifications")}
@@ -200,7 +200,7 @@ export default function AdminSettingsPage() {
         ))}
       </section>
 
-      {/* 📱 SMS Розсилка */}
+      {}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
           <Phone size={20} /> {tLabel("SMS Розсилка", "SMS Broadcast")}
@@ -212,7 +212,7 @@ export default function AdminSettingsPage() {
         </p>
       </section>
 
-      {/* 🧠 Аналітичні підказки */}
+      {}
       <section className="bg-gray-900/70 p-6 rounded-xl border border-gray-800">
         <h3 className="text-green-400 font-medium flex items-center gap-2 mb-3">
           <Brain size={20} /> {tLabel("Аналітичні підказки", "AI Insights")}

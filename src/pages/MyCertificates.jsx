@@ -157,7 +157,7 @@ export default function MyCertificates() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {certs.map((cert, i) => {
-            const isExpired = new Date(cert.expires) < new Date(); // ✅ додаємо перевірку
+            const isExpired = new Date(cert.expires) < new Date(); 
 
             return (
               <motion.div
@@ -197,7 +197,7 @@ export default function MyCertificates() {
                   {tLabel("Результат", "Result")}: {cert.percent}%
                 </p>
 
-                {/* ✅ Якщо сертифікат прострочений */}
+                {}
                 {isExpired ? (
                   <div className="mt-auto bg-red-800/40 border border-red-600 text-red-300 px-3 py-2 rounded-md text-center font-semibold">
                     {tLabel("❌ Сертифікат недійсний", "❌ Certificate expired")}

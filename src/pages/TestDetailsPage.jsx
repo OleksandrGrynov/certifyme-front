@@ -141,7 +141,7 @@ export default function TestDetailsPage() {
 
   useEffect(() => {
     let mounted = true;
-    // Використовуємо публічний маршрут без авторизації
+    
     fetch(`${API_URL}/api/tests/public/${id}`)
       .then((r) => r.json())
       .then((data) => {

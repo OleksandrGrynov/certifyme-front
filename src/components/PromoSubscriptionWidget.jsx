@@ -19,9 +19,7 @@ export default function PromoSubscriptionWidget() {
   const interval = useRef(null);
   const inactivityTimer = useRef(null);
 
-  /* ======================================================
-     🧩 1. Перевірка токену і статусу підписки
-     ====================================================== */
+  
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -56,9 +54,7 @@ export default function PromoSubscriptionWidget() {
     };
   }, []);
 
-  /* ======================================================
-     ⏱️ 2. Автоматичне приховування після 10 секунд без дій
-     ====================================================== */
+  
   const resetInactivityTimer = () => {
     clearTimeout(inactivityTimer.current);
     inactivityTimer.current = setTimeout(() => {
@@ -74,7 +70,7 @@ export default function PromoSubscriptionWidget() {
           },
         });
       }
-    }, 10000); // 10 секунд
+    }, 10000); 
   };
 
   useEffect(() => {
@@ -89,9 +85,7 @@ export default function PromoSubscriptionWidget() {
     };
   }, [visible]);
 
-  /* ======================================================
-     🖱️ 3. Перетягування (draggable)
-     ====================================================== */
+  
   const handleMouseDown = (e) => {
     if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
     setDragging(true);
@@ -117,9 +111,7 @@ export default function PromoSubscriptionWidget() {
     };
   }, [dragging]);
 
-  /* ======================================================
-     📲 4. Підписка на SMS
-     ====================================================== */
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!phone.trim()) return toast.error("📱 Введіть номер телефону!");
@@ -151,9 +143,7 @@ export default function PromoSubscriptionWidget() {
     }
   };
 
-  /* ======================================================
-     ❌ 5. Закриття вікна з підтвердженням
-     ====================================================== */
+  
   const handleCloseClick = () => {
     toast(
       (t) => (
@@ -193,9 +183,7 @@ export default function PromoSubscriptionWidget() {
     );
   };
 
-  /* ======================================================
-     🚫 6. Галочка "Більше не показувати"
-     ====================================================== */
+  
   const handleNeverShow = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -244,9 +232,7 @@ export default function PromoSubscriptionWidget() {
     );
   };
 
-  /* ======================================================
-     🎨 7. Рендер компонента
-     ====================================================== */
+  
   return (
     <AnimatePresence>
       {visible && (

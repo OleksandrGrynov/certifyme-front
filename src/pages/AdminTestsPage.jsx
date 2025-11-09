@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useLocation } from "react-router-dom";
 import {
   Plus,
   Trash,
@@ -13,6 +13,7 @@ import { API_URL } from "../lib/apiClient";
 export default function AdminTestsPage() {
   const { i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const tLabel = (ua, en) => (i18n.language === "ua" ? ua : en);
 
@@ -21,7 +22,7 @@ export default function AdminTestsPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [testToDelete, setTestToDelete] = useState(null);
 
-  // 📚 Завантажити всі тести
+  
   const loadTests = async () => {
     try {
       const lang = i18n.language || "ua";
@@ -32,18 +33,30 @@ export default function AdminTestsPage() {
       console.error("❌ Помилка отримання тестів:", err);
     }
   };
+  useEffect(() => {
+    if (location.state?.toast === "updated") {
+      setToast({ message: " Тест успішно оновлено!", type: "success" });
+      window.history.replaceState({}, document.title);
+      setTimeout(() => setToast(null), 1000);
+    } else if (location.state?.toast === "created") {
+      setToast({ message: " Тест успішно створено!", type: "success" });
+      window.history.replaceState({}, document.title);
+      setTimeout(() => setToast(null), 1000);
+    }
+  }, [location.state]);
+
 
   useEffect(() => {
     loadTests();
   }, [i18n.language]);
 
-  // 🗑️ Відкрити підтвердження видалення
+  
   const confirmDelete = (test) => {
     setTestToDelete(test);
     setShowConfirm(true);
   };
 
-  // 🗑️ Підтвердити видалення тесту
+  
   const handleDeleteTest = async () => {
     if (!testToDelete) return;
     const token = localStorage.getItem("token");
@@ -76,12 +89,12 @@ export default function AdminTestsPage() {
     }
   };
 
-  // ✏️ Перейти до редагування
+  
   const handleEdit = (test) => {
     navigate(`/admin/tests/${test.id}/edit`);
   };
 
-  // 💾 Toast helper
+  
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -89,7 +102,7 @@ export default function AdminTestsPage() {
 
   return (
     <div className="relative">
-      {/* ✅ Toast повідомлення */}
+      {}
       {toast && (
         <div
           className={`fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 animate-fadeIn ${
@@ -101,7 +114,7 @@ export default function AdminTestsPage() {
         </div>
       )}
 
-      {/* Заголовок */}
+      {}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl text-green-400 font-bold">
           {tLabel("Тести", "Tests")}
@@ -114,7 +127,7 @@ export default function AdminTestsPage() {
         </button>
       </div>
 
-      {/* 📋 Список тестів */}
+      {}
       {tests.length === 0 ? (
         <p className="text-gray-400 text-center">
           {tLabel(
@@ -164,7 +177,7 @@ export default function AdminTestsPage() {
         </div>
       )}
 
-      {/* ⚠️ Модальне підтвердження видалення */}
+      {}
       {showConfirm && testToDelete && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md shadow-xl">
