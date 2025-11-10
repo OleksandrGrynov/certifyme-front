@@ -172,8 +172,8 @@ export default function AdminCreateTestPage() {
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fadeIn">
           <CheckCircle className="inline mr-2" size={18} />
           {i18n.language === "en"
-            ? "✅ Test successfully created!"
-            : "✅ Тест успішно створено!"}
+            ? "Test successfully created!"
+            : "Тест успішно створено!"}
         </div>
       )}
 

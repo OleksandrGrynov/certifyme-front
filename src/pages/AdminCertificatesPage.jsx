@@ -67,7 +67,7 @@ export default function AdminCertificatesPage() {
                 setFiltered(data.certificates || []);
             } else {
                 toast.error(
-                  "❌ " +
+                  " " +
                   (data.message ||
                     (lang === "ua"
                       ? "Не вдалося отримати сертифікати"
@@ -75,9 +75,9 @@ export default function AdminCertificatesPage() {
                 );
             }
         } catch (err) {
-            console.error("❌ Error loading certificates:", err);
+            console.error(" Error loading certificates:", err);
             toast.error(
-              "❌ " + (lang === "ua" ? "Помилка завантаження" : "Load error")
+              " " + (lang === "ua" ? "Помилка завантаження" : "Load error")
             );
         } finally {
             setLoading(false);
@@ -127,19 +127,19 @@ export default function AdminCertificatesPage() {
                 setCertificates((prev) => prev.filter((c) => c.id !== id));
                 setFiltered((prev) => prev.filter((c) => c.id !== id));
                 toast.success(
-                  lang === "ua" ? "✅ Сертифікат видалено" : "✅ Certificate deleted"
+                  lang === "ua" ? "Сертифікат видалено" : "Certificate deleted"
                 );
             } else {
                 toast.error(
-                  "❌ " +
+                  " " +
                   (data.message ||
                     (lang === "ua" ? "Помилка видалення" : "Delete error"))
                 );
             }
         } catch (err) {
-            console.error("❌ Error deleting certificate:", err);
+            console.error(" Error deleting certificate:", err);
             toast.error(
-              "❌ " + (lang === "ua" ? "Помилка видалення" : "Delete error")
+              " " + (lang === "ua" ? "Помилка видалення" : "Delete error")
             );
         }
     };
@@ -167,17 +167,17 @@ export default function AdminCertificatesPage() {
             const data = await res.json();
             if (data.success) {
                 toast.success(
-                  lang === "ua" ? "✅ Дата дії оновлена" : "✅ Expiration date updated"
+                  lang === "ua" ? "Дата дії оновлена" : "Expiration date updated"
                 );
                 setCertificates((prev) =>
                   prev.map((c) => (c.id === id ? { ...c, expires: newDate } : c))
                 );
             } else {
-                toast.error("❌ " + (data.message || "Error updating date"));
+                toast.error(" " + (data.message || "Error updating date"));
             }
         } catch (err) {
-            console.error("❌ Error updating expiration date:", err);
-            toast.error("❌ Server error");
+            console.error(" Error updating expiration date:", err);
+            toast.error(" Server error");
         }
     };
 

@@ -34,7 +34,7 @@ export default function AchievementsPage() {
       const data = await getUserAchievements();
       setAchievements(data);
     } catch (err) {
-      console.error("❌ Failed to load achievements:", err);
+      console.error(" Failed to load achievements:", err);
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export default function AchievementsPage() {
           .then(() => {
             audio.pause();
             audio.currentTime = 0;
-            console.log("✅ Audio unlocked");
+            console.log("Audio unlocked");
             setAudioUnlocked(true);
           })
           .catch(() => {});

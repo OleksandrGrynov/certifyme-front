@@ -78,7 +78,7 @@ export default function OtpVerifyModal({ email, onSuccess, onClose }) {
         setMessage(data.message || messages[lang].error);
       }
     } catch (err) {
-      console.error("❌ verify error:", err);
+      console.error(" verify error:", err);
       setStatus("error");
       setMessage(messages[lang].error);
     }

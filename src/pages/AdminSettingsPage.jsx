@@ -52,7 +52,7 @@ export default function AdminSettingsPage() {
           setSystem(data.info);
         }
       })
-      .catch((err) => console.error("❌ System info error:", err));
+      .catch((err) => console.error(" System info error:", err));
   }, [lang]);
 
   
@@ -106,7 +106,7 @@ export default function AdminSettingsPage() {
     toast.loading(tLabel(`⏳ Виконую: ${labelUa}`, `⏳ Running: ${labelEn}`));
     await new Promise((r) => setTimeout(r, 1200));
     toast.dismiss();
-    toast.success(tLabel(`✅ Завершено: ${labelUa}`, `✅ Completed: ${labelEn}`));
+    toast.success(tLabel(`Завершено: ${labelUa}`, `Completed: ${labelEn}`));
   };
 
   return (

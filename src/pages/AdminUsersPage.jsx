@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
           .then((data) => {
               if (data.success) setUsers(data.users);
           })
-          .catch((err) => console.error("❌ Error loading users:", err));
+          .catch((err) => console.error(" Error loading users:", err));
     }, []);
 
     
@@ -77,7 +77,7 @@ export default function AdminUsersPage() {
             setUsers((prev) => prev.filter((u) => u.id !== id));
             toast.success(tLabel("Користувача видалено!", "User deleted successfully!"));
         } else {
-            toast.error("❌ " + data.message);
+            toast.error(" " + data.message);
         }
     };
 
@@ -101,7 +101,7 @@ export default function AdminUsersPage() {
             toast.success(tLabel("Роль оновлено", "Role updated"));
         } else {
             toast.error(
-              "❌ " + (data.message || tLabel("Помилка сервера", "Server error"))
+              " " + (data.message || tLabel("Помилка сервера", "Server error"))
             );
         }
     };

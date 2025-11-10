@@ -62,7 +62,7 @@ export default function AdminContactsPage() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("❌ Error fetching contacts:", err);
+        console.error(" Error fetching contacts:", err);
         setLoading(false);
       });
   }, []);
@@ -106,7 +106,7 @@ export default function AdminContactsPage() {
         );
       }
     } catch (err) {
-      console.error("❌ Error updating status:", err);
+      console.error(" Error updating status:", err);
     }
   };
 

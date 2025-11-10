@@ -83,7 +83,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                     toast.success("📩 Код підтвердження надіслано на пошту!");
                     if (onOtpStart) onOtpStart(formData.email);
                 } else {
-                    toast.error(data.message || "❌ Помилка реєстрації");
+                    toast.error(data.message || " Помилка реєстрації");
                 }
             } else {
                 const res = await fetch(`${API_URL}/api/users/login`, {
@@ -102,7 +102,7 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                 } else toast.error(data.message || t("error_login"));
             }
         } catch (err) {
-            toast.error("❌ Помилка з'єднання з сервером");
+            toast.error(" Помилка з'єднання з сервером");
             console.error("Register/Login error:", err);
         } finally {
             setLoading(false);
@@ -184,12 +184,12 @@ export default function AuthModal({ isOpen, onClose, onOtpStart }) {
                 else tToast.success("📩 Лист надіслано", "📩 Email sent");
             } else {
                 if (data.message) toast.error(data.message);
-                else tToast.error("❌ Помилка відправки", "❌ Send failed");
+                else tToast.error(" Помилка відправки", " Send failed");
             }
         } catch {
-            const msgUa = "❌ Помилка з'єднання з сервером";
+            const msgUa = " Помилка з'єднання з сервером";
             setResetMessage(msgUa);
-            tToast.error(msgUa, "❌ Server connection error");
+            tToast.error(msgUa, " Server connection error");
         } finally {
             setSending(false);
         }

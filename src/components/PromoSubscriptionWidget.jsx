@@ -117,7 +117,7 @@ export default function PromoSubscriptionWidget() {
     if (!phone.trim()) return toast.error("📱 Введіть номер телефону!");
 
     const token = localStorage.getItem("token");
-    if (!token) return toast.error("❌ Спочатку увійди в акаунт!");
+    if (!token) return toast.error(" Спочатку увійди в акаунт!");
     const keyBase = `promoWidget_${token.slice(0, 16)}`;
 
     setSubmitting(true);
@@ -134,7 +134,7 @@ export default function PromoSubscriptionWidget() {
       if (data.success) {
         localStorage.setItem(`${keyBase}_subscribed`, "true");
         setVisible(false);
-        toast.success("✅ Ви підписались на SMS-сповіщення!");
+        toast.success("Ви підписались на SMS-сповіщення!");
       } else toast.error("⚠️ " + (data.message || "Помилка підписки"));
     } catch {
       toast.error("⚠️ Сервер недоступний");

@@ -34,7 +34,7 @@ export default function TestPage() {
           .then(() => {
             audio.pause();
             audio.currentTime = 0;
-            console.log("✅ Audio context unlocked (TestPage)");
+            console.log("Audio context unlocked (TestPage)");
             setAudioUnlocked(true);
           })
           .catch((err) => console.warn("⚠️ Unlock failed:", err.message));
@@ -82,7 +82,7 @@ export default function TestPage() {
             
             setTimeout(() => (window.location.href = "/tests"), 1000);
           } else {
-            tToast.error("❌ Помилка доступу", "❌ Access error");
+            tToast.error(" Помилка доступу", " Access error");
           }
 
           setTest(null);
@@ -93,8 +93,8 @@ export default function TestPage() {
         const data = await res.json();
         if (data.success) setTest(data.test);
       } catch (err) {
-        console.error("❌ Помилка завантаження тесту:", err);
-        tToast.error("❌ Сервер недоступний", "❌ Server unavailable");
+        console.error(" Помилка завантаження тесту:", err);
+        tToast.error(" Сервер недоступний", " Server unavailable");
       }
     };
 
@@ -170,7 +170,7 @@ export default function TestPage() {
         }
       }
     } catch (err) {
-      console.error("❌ Achievement unlock failed:", err);
+      console.error(" Achievement unlock failed:", err);
     }
   };
 
@@ -229,7 +229,7 @@ export default function TestPage() {
         await unlockAchievement("no_mistakes");
 
     } catch (err) {
-      console.error("❌ Помилка при оновленні досягнення:", err);
+      console.error(" Помилка при оновленні досягнення:", err);
     }
   };
 
@@ -270,11 +270,11 @@ export default function TestPage() {
         }));
       } else
         tToast.error(
-          "❌ Не вдалося отримати пояснення",
-          "❌ Failed to get explanation"
+          " Не вдалося отримати пояснення",
+          " Failed to get explanation"
         );
     } catch {
-      tToast.error("❌ Сервер недоступний", "❌ Server unavailable");
+      tToast.error(" Сервер недоступний", " Server unavailable");
     }
   };
 
@@ -316,8 +316,8 @@ export default function TestPage() {
       );
     } catch {
       tToast.error(
-        "❌ Не вдалося згенерувати сертифікат",
-        "❌ Failed to generate certificate"
+        " Не вдалося згенерувати сертифікат",
+        " Failed to generate certificate"
       );
     }
   };
@@ -578,7 +578,7 @@ export default function TestPage() {
                             ? explanations[i].ua
                             : explanations[i].en || explanations[i].ua
                         )
-                          .split(/\n|(?=✅|❌|👉)/)
+                          .split(/\n|(?=✅||👉)/)
                           .filter((p) => p.trim())
                           .map((p, j) => (
                             <p key={j} className="mb-2 text-gray-200">

@@ -30,7 +30,7 @@ export default function AdminTestsPage() {
       const data = await res.json();
       if (data.success) setTests(data.tests || []);
     } catch (err) {
-      console.error("❌ Помилка отримання тестів:", err);
+      console.error(" Помилка отримання тестів:", err);
     }
   };
   useEffect(() => {
@@ -73,16 +73,16 @@ export default function AdminTestsPage() {
 
       if (data.success) {
         setTests((prev) => prev.filter((t) => t.id !== testToDelete.id));
-        showToast(tLabel("✅ Тест успішно видалено!", "✅ Test deleted successfully!"));
+        showToast(tLabel("Тест успішно видалено!", "Test deleted successfully!"));
       } else {
         showToast(
-          tLabel("❌ Помилка при видаленні тесту!", "❌ Error deleting test!"),
+          tLabel(" Помилка при видаленні тесту!", " Error deleting test!"),
           "error"
         );
       }
     } catch (err) {
-      console.error("❌ Error deleting test:", err);
-      showToast(tLabel("❌ Помилка сервера!", "❌ Server error!"), "error");
+      console.error(" Error deleting test:", err);
+      showToast(tLabel(" Помилка сервера!", " Server error!"), "error");
     } finally {
       setShowConfirm(false);
       setTestToDelete(null);

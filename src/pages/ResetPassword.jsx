@@ -28,8 +28,8 @@ export default function ResetPassword() {
     if (password !== confirm) {
       setMessage(
         i18n.language === "ua"
-          ? "❌ Паролі не співпадають"
-          : "❌ Passwords do not match"
+          ? " Паролі не співпадають"
+          : " Passwords do not match"
       );
       return;
     }
@@ -39,8 +39,8 @@ export default function ResetPassword() {
     if (!check.isValid) {
       setMessage(
         i18n.language === "ua"
-          ? "❌ Пароль має містити мінімум 6 символів, одну велику літеру, цифру та спецсимвол"
-          : "❌ Password must contain at least 6 characters, one uppercase letter, a number and a special symbol"
+          ? " Пароль має містити мінімум 6 символів, одну велику літеру, цифру та спецсимвол"
+          : " Password must contain at least 6 characters, one uppercase letter, a number and a special symbol"
       );
       return;
     }
@@ -63,8 +63,8 @@ export default function ResetPassword() {
     } catch {
       setMessage(
         i18n.language === "ua"
-          ? "❌ Помилка сервера"
-          : "❌ Server error"
+          ? " Помилка сервера"
+          : " Server error"
       );
     } finally {
       setLoading(false);

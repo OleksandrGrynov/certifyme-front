@@ -25,7 +25,7 @@ export default function CheckoutPage() {
         if (data.success && data.test) setTest(data.test);
         else setError(i18n.language === "ua" ? "Тест не знайдено" : "Test not found");
       } catch (err) {
-        console.error("❌ loadTest error:", err);
+        console.error(" loadTest error:", err);
         setError(
           i18n.language === "ua"
             ? "Помилка під час завантаження тесту"
@@ -69,8 +69,8 @@ export default function CheckoutPage() {
         const data = await res.json();
         if (data.success) {
           tToast.success(
-            "✅ Безкоштовний тест відкрито!",
-            "✅ Free test unlocked!"
+            "Безкоштовний тест відкрито!",
+            "Free test unlocked!"
           );
           navigate(`/tests/${id}`);
           return;

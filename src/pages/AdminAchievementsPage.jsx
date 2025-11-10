@@ -56,7 +56,7 @@ export default function AdminAchievementsPage() {
             const data = await res.json();
             if (data.success) setAchievements(data.achievements || []);
         } catch (err) {
-            console.error("❌ Error loading achievements:", err);
+            console.error(" Error loading achievements:", err);
         }
     }, [lang]);
 
@@ -88,16 +88,16 @@ export default function AdminAchievementsPage() {
                 setShowForm(false);
                 setEditing(null);
                 setForm(emptyForm);
-                tToast.success("✅ Збережено!", "✅ Saved!");
+                tToast.success("Збережено!", "Saved!");
             } else {
                 tToast.error(
-                  "❌ " + (data.message || "Помилка збереження"),
-                  "❌ Save error"
+                  " " + (data.message || "Помилка збереження"),
+                  " Save error"
                 );
             }
         } catch (err) {
-            console.error("❌ Save error:", err);
-            tToast.error("❌ Помилка з'єднання", "❌ Connection error");
+            console.error(" Save error:", err);
+            tToast.error(" Помилка з'єднання", " Connection error");
         }
     };
 
@@ -138,11 +138,11 @@ export default function AdminAchievementsPage() {
             const data = await res.json();
             if (data.success) {
                 await loadAchievements();
-                tToast.success("✅ Видалено", "✅ Deleted");
+                tToast.success("Видалено", "Deleted");
             }
         } catch (err) {
-            console.error("❌ Delete error:", err);
-            tToast.error("❌ Помилка з'єднання", "❌ Connection error");
+            console.error(" Delete error:", err);
+            tToast.error(" Помилка з'єднання", " Connection error");
         }
     };
 
@@ -308,7 +308,7 @@ export default function AdminAchievementsPage() {
                             {lang === "ua" ? "Тип умови..." : "Condition type..."}
                         </option>
                         <option value="tests_passed">
-                            ✅ {lang === "ua" ? "Пройдено тестів" : "Tests passed"}
+                            {lang === "ua" ? "Пройдено тестів" : "Tests passed"}
                         </option>
                         <option value="certificates">
                             📜 {lang === "ua" ? "Отримано сертифікатів" : "Certificates"}

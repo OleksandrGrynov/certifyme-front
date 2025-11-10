@@ -38,7 +38,7 @@ export default function TestResultDetails() {
           );
         }
       } catch (err) {
-        console.error("❌ Fetch result error:", err);
+        console.error(" Fetch result error:", err);
         toast.error(lang === "ua" ? "Помилка сервера" : "Server error");
       } finally {
         setLoading(false);
@@ -58,7 +58,7 @@ export default function TestResultDetails() {
   if (!result)
     return (
       <div className="text-center text-gray-400 mt-10">
-        ❌ {lang === "ua" ? "Результат не знайдено" : "Result not found"}
+         {lang === "ua" ? "Результат не знайдено" : "Result not found"}
         <div className="mt-4">
           <Link to="/tests" className="text-green-400 underline">
             {lang === "ua" ? "Назад до тестів" : "Back to tests"}
@@ -104,11 +104,11 @@ export default function TestResultDetails() {
           <p className="mt-2 text-sm text-gray-500">
             {result.passed
               ? lang === "ua"
-                ? "✅ Тест успішно пройдено!"
-                : "✅ Test passed!"
+                ? "Тест успішно пройдено!"
+                : "Test passed!"
               : lang === "ua"
-                ? "❌ Тест не пройдено"
-                : "❌ Test failed"}
+                ? " Тест не пройдено"
+                : " Test failed"}
           </p>
         </div>
 

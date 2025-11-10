@@ -183,7 +183,7 @@ export default function HomePage() {
         navigate(`/tests/${tst.id}`);
       }
     } catch (err) {
-      console.error("❌ handleTakeTest error:", err);
+      console.error(" handleTakeTest error:", err);
     }
   };
 

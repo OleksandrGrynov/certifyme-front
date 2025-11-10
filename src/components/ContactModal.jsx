@@ -96,7 +96,7 @@ export default function ContactModal({ isOpen, onClose }) {
                 );
             }
         } catch (err) {
-            console.error("❌ Fetch error:", err);
+            console.error(" Fetch error:", err);
             tToast.error("⚠️ Не вдалося зʼєднатися із сервером.", "⚠️ Failed to connect to server.");
         }
     };

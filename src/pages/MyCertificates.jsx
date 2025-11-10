@@ -32,7 +32,7 @@ export default function MyCertificates() {
         const data = await res.json();
         if (data.success) setCerts(data.certificates || []);
       } catch (err) {
-        console.error("❌ Error loading certificates:", err);
+        console.error(" Error loading certificates:", err);
       } finally {
         setLoading(false);
       }
@@ -66,7 +66,7 @@ export default function MyCertificates() {
         tLabel("Сертифікат не з’явився після генерації.", "Certificate not generated in time."),
       );
     } catch (err) {
-      console.error("❌ ensureCertificateAvailable:", err);
+      console.error(" ensureCertificateAvailable:", err);
       throw err;
     }
   };
@@ -200,7 +200,7 @@ export default function MyCertificates() {
                 {}
                 {isExpired ? (
                   <div className="mt-auto bg-red-800/40 border border-red-600 text-red-300 px-3 py-2 rounded-md text-center font-semibold">
-                    {tLabel("❌ Сертифікат недійсний", "❌ Certificate expired")}
+                    {tLabel(" Сертифікат недійсний", " Certificate expired")}
                   </div>
                 ) : (
                   <div className="flex gap-3 mt-auto">

@@ -24,7 +24,7 @@ export default function VerifyCertificate() {
         const data = await res.json();
         setCert(data);
       } catch (err) {
-        console.error("❌ verify fetch error:", err);
+        console.error(" verify fetch error:", err);
         setCert({ success: false });
       } finally {
         setLoading(false);
@@ -63,7 +63,7 @@ export default function VerifyCertificate() {
           className="bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-lg w-full text-center shadow-2xl"
         >
           <h1 className="text-4xl text-red-500 font-bold mb-4">
-            ❌ {tLabel("Сертифікат не знайдено", "Certificate not found")}
+             {tLabel("Сертифікат не знайдено", "Certificate not found")}
           </h1>
           <p className="text-gray-400 mb-6 text-center">
             {tLabel(
@@ -98,7 +98,7 @@ export default function VerifyCertificate() {
       >
         <h1 className={`text-3xl font-bold mb-3 ${color}`}>
           {isValid
-            ? tLabel("✅ Сертифікат дійсний", "✅ Certificate is valid")
+            ? tLabel("Сертифікат дійсний", "Certificate is valid")
             : tLabel("⚠️ Сертифікат прострочений", "⚠️ Certificate expired")}
         </h1>
         <p className="text-gray-400 mb-6">

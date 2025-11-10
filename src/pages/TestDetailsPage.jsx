@@ -132,7 +132,7 @@ export default function TestDetailsPage() {
           navigate(`/tests/${id}`, { replace: true });
         }
       } catch (err) {
-        console.error("❌ Failed to grant access:", err);
+        console.error(" Failed to grant access:", err);
       }
     };
 
@@ -264,8 +264,8 @@ export default function TestDetailsPage() {
       {showSuccess && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg z-50 font-semibold">
           {lang === "ua"
-            ? "✅ Оплата успішна! Доступ до тесту відкрито."
-            : "✅ Payment successful! Access granted."}
+            ? "Оплата успішна! Доступ до тесту відкрито."
+            : "Payment successful! Access granted."}
         </div>
       )}
 

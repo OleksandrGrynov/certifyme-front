@@ -45,7 +45,7 @@ export default function TestsPage() {
         setOwnedIds(new Set());
       }
     } catch (err) {
-      console.error("❌ Fetch tests error:", err);
+      console.error(" Fetch tests error:", err);
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export default function TestsPage() {
       const data = await res.json();
       if (data.success) setPassedTests(data.tests);
     } catch (err) {
-      console.error("❌ loadPassedTests:", err);
+      console.error(" loadPassedTests:", err);
     }
   }, [token]);
 
@@ -82,8 +82,8 @@ export default function TestsPage() {
       
       if (!import.meta.env.DEV) {
         tToast.success(
-          "✅ Оплата обробляється. Доступ з'явиться за мить.",
-          "✅ Payment is processing. Access will appear shortly."
+          "Оплата обробляється. Доступ з'явиться за мить.",
+          "Payment is processing. Access will appear shortly."
         );
         await loadTests();
         
@@ -110,8 +110,8 @@ export default function TestsPage() {
         if (data.success) {
           toast.dismiss();
           tToast.success(
-            "✅ Оплата успішна! Доступ до тесту відкрито.",
-            "✅ Payment successful! Access granted."
+            "Оплата успішна! Доступ до тесту відкрито.",
+            "Payment successful! Access granted."
           );
 
           if (data.unlocked?.length > 0) {
@@ -136,7 +136,7 @@ export default function TestsPage() {
           tToast.error("⚠️ Не вдалося видати доступ", "⚠️ Failed to grant access");
         }
       } catch (err) {
-        console.error("❌ grant error:", err);
+        console.error(" grant error:", err);
         tToast.error("⚠️ Помилка grant запиту", "⚠️ Grant request error");
       }
     };
@@ -299,7 +299,7 @@ export default function TestsPage() {
 
                 {isPassed && (
                   <div className="text-sm text-gray-300 mb-3">
-                    ✅ {tLabel("Результат:", "Score:")} {test.score}/{test.total} (
+                    {tLabel("Результат:", "Score:")} {test.score}/{test.total} (
                     {scorePercent}%)
                     <br />
                     🕓{" "}
@@ -322,12 +322,12 @@ export default function TestsPage() {
                     <div className="flex flex-col gap-2 w-full text-sm text-gray-300">
                       <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
                         <p>
-                          ✅ {tLabel("Правильних:", "Correct:")}{" "}
+                          {tLabel("Правильних:", "Correct:")}{" "}
                           <span className="text-green-400 font-semibold">{test.score}</span> /{" "}
                           {test.total}
                         </p>
                         <p>
-                          ❌ {tLabel("Неправильних:", "Incorrect:")}{" "}
+                           {tLabel("Неправильних:", "Incorrect:")}{" "}
                           <span className="text-red-400 font-semibold">
                             {test.total - test.score}
                           </span>

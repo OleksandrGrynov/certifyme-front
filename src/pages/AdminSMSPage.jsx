@@ -14,12 +14,12 @@ export default function AdminSMSPage() {
 
   const handleSend = async () => {
     if (!message.trim()) {
-      toast.error(tLabel("❌ Введіть текст повідомлення", "❌ Enter message text"));
+      toast.error(tLabel(" Введіть текст повідомлення", " Enter message text"));
       return;
     }
 
     const token = localStorage.getItem("token");
-    if (!token) return toast.error(tLabel("❌ Ви не авторизовані", "❌ You are not authorized"));
+    if (!token) return toast.error(tLabel(" Ви не авторизовані", " You are not authorized"));
 
     setSending(true);
     try {
@@ -37,8 +37,8 @@ export default function AdminSMSPage() {
       if (data.success) {
         toast.success(
           tLabel(
-            `✅ ${data.message || "Розсилку надіслано!"}`,
-            `✅ ${data.message || "Message sent successfully!"}`
+            `${data.message || "Розсилку надіслано!"}`,
+            `${data.message || "Message sent successfully!"}`
           )
         );
         setMessage("");
@@ -46,7 +46,7 @@ export default function AdminSMSPage() {
         toast.error(tLabel(data.message || "⚠️ Помилка розсилки", data.message || "⚠️ Sending error"));
       }
     } catch (err) {
-      console.error("❌ sendPromo error:", err);
+      console.error(" sendPromo error:", err);
       toast.error(tLabel("⚠️ Сервер недоступний", "⚠️ Server unavailable"));
     } finally {
       setTimeout(() => setSending(false), 1000);

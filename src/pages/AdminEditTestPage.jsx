@@ -37,10 +37,10 @@ export default function AdminEditTestPage() {
             questions: data.test.questions || [],
           });
         } else {
-          console.error("❌ Failed to load test:", data.message);
+          console.error(" Failed to load test:", data.message);
         }
       } catch (err) {
-        console.error("❌ error loading test:", err);
+        console.error(" error loading test:", err);
       }
     };
 
@@ -159,8 +159,8 @@ export default function AdminEditTestPage() {
       navigate("/admin", { state: { toast: "updated" } });
     } catch (err) {
       setIsSaving(false);
-      console.error("❌ Error saving test:", err);
-      alert("❌ Помилка при збереженні тесту");
+      console.error(" Error saving test:", err);
+      alert(" Помилка при збереженні тесту");
     }
   };
 

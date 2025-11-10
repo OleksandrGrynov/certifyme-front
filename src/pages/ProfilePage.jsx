@@ -63,7 +63,7 @@ export default function ProfilePage() {
           });
         }
       })
-      .catch((err) => console.error("❌ Profile fetch error:", err));
+      .catch((err) => console.error(" Profile fetch error:", err));
   }, [navigate, token]);
   const [showPasswords, setShowPasswords] = useState({
     old: false,
@@ -113,15 +113,15 @@ export default function ProfilePage() {
         });
         setIsEditing(false);
         successSound.play();
-        tToast.success("✅ Дані успішно оновлено", "✅ Data updated successfully");
+        tToast.success("Дані успішно оновлено", "Data updated successfully");
       } else {
         errorSound.play();
-        tToast.error("❌ " + data.message, "❌ " + (data.message || "Update error"));
+        tToast.error(" " + data.message, " " + (data.message || "Update error"));
       }
     } catch (err) {
       console.error("Помилка при оновленні:", err);
       errorSound.play();
-      tToast.error("❌ Помилка при оновленні", "❌ Update error");
+      tToast.error(" Помилка при оновленні", " Update error");
     }
   };
 
@@ -130,7 +130,7 @@ export default function ProfilePage() {
 
     if (passwords.new !== passwords.confirm) {
       errorSound.play();
-      toast.error(t("passwords_not_match") || "❌ Новий пароль не співпадає з підтвердженням");
+      toast.error(t("passwords_not_match") || " Новий пароль не співпадає з підтвердженням");
       return;
     }
 
@@ -151,19 +151,19 @@ export default function ProfilePage() {
       if (data.success) {
         successSound.play();
         tToast.success(
-          "✅ Пароль успішно змінено!",
-          "✅ Password changed!",
+          "Пароль успішно змінено!",
+          "Password changed!",
         );
         setPasswords({ old: "", new: "", confirm: "" });
         setShowPasswordForm(false);
       } else {
         errorSound.play();
-        tToast.error("❌ " + (data.message || "Помилка зміни пароля"), "❌ " + (data.message || "Password change error"));
+        tToast.error(" " + (data.message || "Помилка зміни пароля"), " " + (data.message || "Password change error"));
       }
     } catch (err) {
       console.error(err);
       errorSound.play();
-      tToast.error("❌ Помилка сервера при зміні пароля", "❌ Server error while changing password");
+      tToast.error(" Помилка сервера при зміні пароля", " Server error while changing password");
     }
   };
 
@@ -183,12 +183,12 @@ export default function ProfilePage() {
         );
       } else {
         errorSound.play();
-        tToast.error("❌ " + (data.message || "Помилка при надсиланні листа"), "❌ " + (data.message || "Failed to send email"));
+        tToast.error(" " + (data.message || "Помилка при надсиланні листа"), " " + (data.message || "Failed to send email"));
       }
     } catch (err) {
       console.error(err);
       errorSound.play();
-      tToast.error("❌ Не вдалося надіслати лист", "❌ Failed to send email");
+      tToast.error(" Не вдалося надіслати лист", " Failed to send email");
     }
   };
 

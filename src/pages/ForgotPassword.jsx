@@ -47,8 +47,8 @@ export default function ForgotPassword() {
     } catch {
       setMessage(
         i18n.language === "ua"
-          ? "❌ Помилка підключення до сервера"
-          : "❌ Server connection error"
+          ? " Помилка підключення до сервера"
+          : " Server connection error"
       );
     } finally {
       setLoading(false);
@@ -82,8 +82,8 @@ export default function ForgotPassword() {
       if (res.ok) {
         setMessage(
           i18n.language === "ua"
-            ? "✅ Пароль успішно змінено! Тепер можете увійти."
-            : "✅ Password changed successfully! You can now log in."
+            ? "Пароль успішно змінено! Тепер можете увійти."
+            : "Password changed successfully! You can now log in."
         );
         setStage("email");
         setEmail("");
@@ -92,15 +92,15 @@ export default function ForgotPassword() {
         setMessage(
           data.message ||
           (i18n.language === "ua"
-            ? "❌ Помилка зміни пароля"
-            : "❌ Password reset error")
+            ? " Помилка зміни пароля"
+            : " Password reset error")
         );
       }
     } catch {
       setMessage(
         i18n.language === "ua"
-          ? "❌ Помилка підключення до сервера"
-          : "❌ Server connection error"
+          ? " Помилка підключення до сервера"
+          : " Server connection error"
       );
     } finally {
       setLoading(false);
