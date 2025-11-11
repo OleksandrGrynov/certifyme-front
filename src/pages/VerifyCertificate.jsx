@@ -15,7 +15,7 @@ export default function VerifyCertificate() {
       try {
         
         const res = await fetch(
-          `${API_URL}/api/tests/certificates/${cert_id}?lang=${i18n.language}`,
+          `${API_URL}/api/certificates/verify/${cert_id}`,
           {
             headers: { "Accept-Language": i18n.language },
           }
